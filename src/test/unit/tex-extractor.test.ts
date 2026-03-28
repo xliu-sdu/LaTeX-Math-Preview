@@ -33,6 +33,12 @@ After`
         expect(snippet?.texString).toBe('$x^2 + y^2$')
     })
 
+    it('finds inline dollar math while the cursor is inside the formula body', () => {
+        const text = 'Value is $x^2 + y^2$ in line.'
+        expect(findTexMath(text, { line: 0, character: 10 }, 20)?.texString).toBe('$x^2 + y^2$')
+        expect(findTexMath(text, { line: 0, character: 18 }, 20)?.texString).toBe('$x^2 + y^2$')
+    })
+
     it('returns undefined for unmatched environment', () => {
         const text = String.raw`\begin{equation}
 x + y`
@@ -40,4 +46,3 @@ x + y`
         expect(snippet).toBeUndefined()
     })
 })
-

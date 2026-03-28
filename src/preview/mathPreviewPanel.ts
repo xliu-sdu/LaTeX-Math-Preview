@@ -5,7 +5,6 @@ import { log, logError } from '../logging'
 import { collectMacros } from '../macros/collector'
 import { MathJaxService, texToSvg } from '../render/mathjax'
 import { getThemeTextColor, renderCursor } from '../render/cursor'
-import { isPointEqual } from '../text-model'
 import { moveWebviewPanel } from '../utils/webview'
 
 type UpdateEvent = {
@@ -230,18 +229,6 @@ export class MathPreviewPanelController implements vscode.Disposable {
             this.clearCache()
             await panel.webview.postMessage({ type: 'mathImage', src: '' })
             return
-        }
-
-        if (snippet.inlineDollar) {
-            // Mirror LaTeX-Workshop-style `$...$` behavior: preview only when the cursor is on a boundary.
-            const cursorPoint = { line: editor.selection.active.line, character: editor.selection.active.character }
-            const atStart = isPointEqual(snippet.range.start, cursorPoint)
-            const atEnd = isPointEqual(snippet.range.end, cursorPoint)
-            if (!atStart && !atEnd) {
-                this.clearCache()
-                await panel.webview.postMessage({ type: 'mathImage', src: '' })
-                return
-            }
         }
 
         this.state.updateToken += 1

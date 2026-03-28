@@ -9,6 +9,12 @@ describe('findMarkdownMath', () => {
         expect(snippet?.inlineDollar).toBe(true)
     })
 
+    it('finds inline markdown math while the cursor is inside the formula body', () => {
+        const text = 'An inline equation $a+b$ appears here.'
+        expect(findMarkdownMath(text, { line: 0, character: 20 }, 20)?.texString).toBe('$a+b$')
+        expect(findMarkdownMath(text, { line: 0, character: 22 }, 20)?.texString).toBe('$a+b$')
+    })
+
     it('finds block $$ math', () => {
         const text = `# Test\n\n$$\n2+1=3\n$$\n`
         const snippet = findMarkdownMath(text, { line: 3, character: 0 }, 20)
@@ -30,4 +36,3 @@ describe('findMarkdownMath', () => {
         expect(snippet?.texString).toBe('$z+w$')
     })
 })
-
