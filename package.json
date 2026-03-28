@@ -1,0 +1,159 @@
+{
+  "name": "latex-math-preview",
+  "displayName": "LaTeX Math Preview",
+  "description": "Math preview panel for LaTeX and Markdown with cursor preview support.",
+  "version": "0.0.1",
+  "publisher": "youjack",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onCommand:latex-math-preview.openMathPreviewPanel",
+    "onCommand:latex-math-preview.closeMathPreviewPanel",
+    "onCommand:latex-math-preview.toggleMathPreviewPanel",
+    "onLanguage:latex",
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "latex-math-preview.openMathPreviewPanel",
+        "title": "Open Math Preview Panel",
+        "category": "LaTeX Math Preview"
+      },
+      {
+        "command": "latex-math-preview.closeMathPreviewPanel",
+        "title": "Close Math Preview Panel",
+        "category": "LaTeX Math Preview"
+      },
+      {
+        "command": "latex-math-preview.toggleMathPreviewPanel",
+        "title": "Toggle Math Preview Panel",
+        "category": "LaTeX Math Preview"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m",
+        "command": "latex-math-preview.toggleMathPreviewPanel",
+        "when": "editorTextFocus && editorLangId =~ /^latex$|^markdown$/"
+      }
+    ],
+    "configuration": {
+      "title": "LaTeX Math Preview",
+      "properties": {
+        "latex-math-preview.mathPreviewPanel.cursor.enabled": {
+          "scope": "window",
+          "type": "boolean",
+          "default": false,
+          "description": "Render a cursor marker in the math preview panel."
+        },
+        "latex-math-preview.mathPreviewPanel.editorGroup": {
+          "scope": "window",
+          "type": "string",
+          "default": "below",
+          "enum": [
+            "current",
+            "left",
+            "right",
+            "above",
+            "below"
+          ],
+          "description": "The editor group in which to open the math preview panel."
+        },
+        "latex-math-preview.hover.preview.maxLines": {
+          "scope": "window",
+          "type": "number",
+          "default": 20,
+          "description": "Maximum number of lines to scan upward when resolving surrounding math environments."
+        },
+        "latex-math-preview.hover.preview.scale": {
+          "scope": "window",
+          "type": "number",
+          "default": 1,
+          "description": "Scaling factor for rendered math preview."
+        },
+        "latex-math-preview.hover.preview.newcommand.parseTeXFile.enabled": {
+          "scope": "window",
+          "type": "boolean",
+          "default": true,
+          "description": "Parse TeX files in workspace to collect macro definitions for rendering."
+        },
+        "latex-math-preview.hover.preview.newcommand.newcommandFile": {
+          "scope": "window",
+          "type": "string",
+          "default": "",
+          "description": "Optional macro definition file. Relative paths are resolved from workspace root."
+        },
+        "latex-math-preview.hover.preview.cursor.enabled": {
+          "scope": "window",
+          "type": "boolean",
+          "default": true,
+          "description": "Enable cursor insertion in rendered preview content."
+        },
+        "latex-math-preview.hover.preview.cursor.symbol": {
+          "scope": "window",
+          "type": "string",
+          "default": "\\!|\\!",
+          "description": "Cursor symbol inserted into rendered TeX."
+        },
+        "latex-math-preview.hover.preview.cursor.color": {
+          "scope": "window",
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "black",
+            "blue",
+            "brown",
+            "cyan",
+            "darkgray",
+            "gray",
+            "green",
+            "lightgray",
+            "lime",
+            "magenta",
+            "olive",
+            "orange",
+            "pink",
+            "purple",
+            "red",
+            "teal",
+            "violet",
+            "white",
+            "yellow"
+          ],
+          "description": "The color of the cursor marker in rendered preview."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run",
+    "test:integration": "node ./out/test/runTest.js"
+  },
+  "dependencies": {
+    "mathjax-full": "^3.2.2",
+    "workerpool": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.5.2",
+    "@types/vscode": "^1.90.0",
+    "@vscode/test-electron": "^2.5.2",
+    "mocha": "^11.7.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
