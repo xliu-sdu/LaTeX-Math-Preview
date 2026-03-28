@@ -5,6 +5,10 @@
   "version": "0.0.1",
   "publisher": "youjack",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Youjack/LaTeX-Math-Preview.git"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
