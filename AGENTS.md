@@ -8,7 +8,7 @@ This repository contains a VS Code extension named `latex-math-preview`.
 
 It provides:
 - a math preview panel for LaTeX and Markdown
-- LW-inspired TeX math detection
+- LaTeX-Workshop-inspired TeX math detection
 - Markdown math detection for `$...$`, `$$...$$`, `\(...\)`, `\[...\]`
 - MathJax rendering through a worker
 - optional cursor rendering inside the preview
