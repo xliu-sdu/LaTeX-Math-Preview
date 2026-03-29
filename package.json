@@ -142,6 +142,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "package:vsix": "vsce package",
     "pretest": "npm run compile",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run",
@@ -151,11 +152,18 @@
     "mathjax-full": "^3.2.2",
     "workerpool": "^10.0.1"
   },
+  "overrides": {
+    "mocha": {
+      "diff": "^8.0.4",
+      "serialize-javascript": "^7.0.5"
+    }
+  },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.5.2",
     "@types/vscode": "^1.90.0",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
     "mocha": "^11.7.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
