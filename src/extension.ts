@@ -21,13 +21,6 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.registerWebviewPanelSerializer('latex-math-preview-mathpreview', controller.serializer),
         controller
     )
-
-    context.subscriptions.push({
-        dispose: () => {
-            void mathJax?.dispose()
-            disposeLogs()
-        }
-    })
     log('Extension', 'LaTeX Math Preview activated.')
 }
 

@@ -7,6 +7,7 @@ import type { IMathJaxWorker } from './mathjax/mathjax.worker'
 export class MathJaxService {
     private readonly pool: workerpool.Pool
     private readonly proxy: Promise<any>
+    private disposePromise: Promise<void> | undefined
 
     constructor(extensionRoot: string) {
         const workerPath = path.join(extensionRoot, 'out', 'render', 'mathjax', 'mathjax.worker.js')
@@ -24,7 +25,10 @@ export class MathJaxService {
     }
 
     async dispose() {
-        await this.pool.terminate(true)
+        if (!this.disposePromise) {
+            this.disposePromise = this.pool.terminate(true).then(() => undefined)
+        }
+        await this.disposePromise
     }
 }
 
