@@ -140,6 +140,10 @@ function findLastMatch(text: string, pat: RegExp): RegExpExecArray | undefined {
     return last
 }
 
+/**
+ * Replaces fenced code blocks and inline code spans with spaces while preserving
+ * the original line and character positions for downstream math-range matching.
+ */
 function maskMarkdownCode(text: string): string {
     const lines = splitLines(text)
     const output: string[] = []
@@ -168,6 +172,10 @@ function maskMarkdownCode(text: string): string {
     return output.join('\n')
 }
 
+/**
+ * Replaces the contents of Markdown inline code spans, including their backtick
+ * delimiters, with spaces so character offsets stay aligned with the source line.
+ */
 function maskInlineCode(line: string): string {
     let out = ''
     let i = 0

@@ -27,14 +27,13 @@ type State = {
 }
 
 export class MathPreviewPanelController implements vscode.Disposable {
-    // Cache the last successful render inputs so we can avoid unnecessary macro re-collection.
     private readonly state: State = {
-        panel: undefined,
-        prevEditTime: 0,
-        prevDocumentUri: undefined,
-        prevCursorPosition: undefined,
-        prevMacros: undefined,
-        updateToken: 0
+        panel: undefined, // Current preview panel instance, if one is open.
+        prevEditTime: 0, // Timestamp of the last processed editor change.
+        prevDocumentUri: undefined, // Document shown in the most recent preview update.
+        prevCursorPosition: undefined, // Cursor position used for the last preview update.
+        prevMacros: undefined, // Most recently applied macro set for rendering.
+        updateToken: 0 // Incrementing token used to discard stale async updates.
     }
 
     public readonly serializer: vscode.WebviewPanelSerializer
@@ -56,11 +55,14 @@ export class MathPreviewPanelController implements vscode.Disposable {
     open() {
         const activeDocument = vscode.window.activeTextEditor?.document
         if (this.state.panel) {
+            // Reuse the existing preview instead of creating duplicate panels.
             if (!this.state.panel.visible) {
+                // Reveal without stealing focus from the editor that triggered the command.
                 this.state.panel.reveal(undefined, true)
             }
             return
         }
+        // Create the panel beside the active editor; later config may move it to a target group.
         const panel = vscode.window.createWebviewPanel(
             'latex-math-preview-mathpreview',
             'Math Preview',
@@ -71,6 +73,7 @@ export class MathPreviewPanelController implements vscode.Disposable {
         panel.webview.html = this.getHtml(panel.webview)
         const cfg = getConfig()
         if (activeDocument) {
+            // Only relocate when there is an editor-backed document to anchor the move.
             void moveWebviewPanel(panel, cfg.panelEditorGroup)
         }
         log('Preview', 'Math preview panel opened.')
@@ -111,8 +114,8 @@ export class MathPreviewPanelController implements vscode.Disposable {
         }
     }
 
+    /** Connects a new preview panel to VS Code events, webview events, and cleanup hooks. */
     private initializePanel(panel: vscode.WebviewPanel) {
-        // Listener lifetimes are tied to the panel so reopening starts from a clean slate.
         const disposables = vscode.Disposable.from(
             vscode.workspace.onDidChangeTextDocument((event) => {
                 void this.update({ type: 'edit', event })
@@ -150,7 +153,13 @@ export class MathPreviewPanelController implements vscode.Disposable {
         this.state.prevMacros = undefined
     }
 
+    /**
+     * Builds the initial webview HTML shell for the math preview panel.
+     * Includes CSP and script wiring; the rendered math image is populated later
+     * when mathpreview.js receives mathImage messages and updates the #math element.
+     */
     private getHtml(webview: vscode.Webview): string {
+        // mathpreview.js listens for mathImage messages and sets the HTML element with id="math".
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mathpreview.js'))
         const csp = [
             `default-src 'none'`,
@@ -159,6 +168,7 @@ export class MathPreviewPanelController implements vscode.Disposable {
             `img-src data:`,
             `style-src 'unsafe-inline'`
         ].join('; ')
+        // This HTML is only the static shell; rendered LaTeX is injected after initialization.
         return `<!DOCTYPE html>
 <html lang="en">
 <head>

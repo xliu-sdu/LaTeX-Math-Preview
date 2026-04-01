@@ -22,6 +22,7 @@ export function renderCursor(document: vscode.TextDocument, snippet: MathSnippet
     if (!editor) {
         return snippet.texString
     }
+
     const cursor = { line: editor.selection.active.line, character: editor.selection.active.character }
     const lineText = document.lineAt(cursor.line).text
     const controlWordStart = findControlWordCommandStart(lineText, cursor.character)
@@ -40,6 +41,7 @@ export function renderCursor(document: vscode.TextDocument, snippet: MathSnippet
     if (isCursorInSuppressedTeXToken(lineText, cursor.character, backslashRun)) {
         return snippet.texString
     }
+    
     const cursorString = buildCursorTeX(options.symbol, options.color)
     const rendered = insertCursorIntoSnippet(snippet.texString, snippet.range.start, insertionPoint, cursorString)
     if (!rendered) {
