@@ -28,28 +28,26 @@ export type EditorGroup = 'current' | 'left' | 'right' | 'above' | 'below'
 
 type Config = {
     panelCursorEnabled: boolean
+    panelCursorSymbol: string
+    panelCursorColor: CursorColor
     panelEditorGroup: EditorGroup
-    previewMaxLines: number
-    previewScale: number
-    parseTeXFileEnabled: boolean
+    panelMaxLines: number
+    panelScale: number
+    parseTeXFilesEnabled: boolean
     macroFile: string
-    hoverCursorEnabled: boolean
-    hoverCursorSymbol: string
-    hoverCursorColor: CursorColor
 }
 
 export function getConfig(): Config {
     const cfg = vscode.workspace.getConfiguration(NS)
     return {
         panelCursorEnabled: cfg.get<boolean>('mathPreviewPanel.cursor.enabled', false),
+        panelCursorSymbol: cfg.get<string>('mathPreviewPanel.cursor.symbol', '\\!|\\!'),
+        panelCursorColor: cfg.get<CursorColor>('mathPreviewPanel.cursor.color', 'auto'),
         panelEditorGroup: cfg.get<EditorGroup>('mathPreviewPanel.editorGroup', 'below'),
-        previewMaxLines: cfg.get<number>('hover.preview.maxLines', 20),
-        previewScale: cfg.get<number>('hover.preview.scale', 1),
-        parseTeXFileEnabled: cfg.get<boolean>('hover.preview.newcommand.parseTeXFile.enabled', true),
-        macroFile: cfg.get<string>('hover.preview.newcommand.newcommandFile', ''),
-        hoverCursorEnabled: cfg.get<boolean>('hover.preview.cursor.enabled', true),
-        hoverCursorSymbol: cfg.get<string>('hover.preview.cursor.symbol', '\\!|\\!'),
-        hoverCursorColor: cfg.get<CursorColor>('hover.preview.cursor.color', 'auto')
+        panelMaxLines: cfg.get<number>('mathPreviewPanel.maxLines', 20),
+        panelScale: cfg.get<number>('mathPreviewPanel.scale', 1),
+        parseTeXFilesEnabled: cfg.get<boolean>('macros.parseTeXFiles.enabled', true),
+        macroFile: cfg.get<string>('macros.file', '')
     }
 }
 

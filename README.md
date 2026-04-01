@@ -73,22 +73,20 @@ The extension contributes these settings under the `latex-math-preview` namespac
 
 - `latex-math-preview.mathPreviewPanel.cursor.enabled`
   Render a cursor marker directly in the preview panel.
+- `latex-math-preview.mathPreviewPanel.cursor.symbol`
+  Cursor symbol inserted into rendered TeX.
+- `latex-math-preview.mathPreviewPanel.cursor.color`
+  Cursor color used in rendered preview content.
 - `latex-math-preview.mathPreviewPanel.editorGroup`
   Choose where the preview panel opens: `current`, `left`, `right`, `above`, or `below`.
-- `latex-math-preview.hover.preview.maxLines`
+- `latex-math-preview.mathPreviewPanel.maxLines`
   Maximum number of lines to scan upward when resolving surrounding math environments.
-- `latex-math-preview.hover.preview.scale`
-  Scale factor for rendered math.
-- `latex-math-preview.hover.preview.newcommand.parseTeXFile.enabled`
+- `latex-math-preview.mathPreviewPanel.scale`
+  Scale factor for rendered math in the preview panel.
+- `latex-math-preview.macros.parseTeXFiles.enabled`
   Parse TeX files in the workspace to collect macro definitions.
-- `latex-math-preview.hover.preview.newcommand.newcommandFile`
+- `latex-math-preview.macros.file`
   Optional macro definition file. Relative paths are resolved from the workspace root.
-- `latex-math-preview.hover.preview.cursor.enabled`
-  Enable cursor insertion in rendered preview content.
-- `latex-math-preview.hover.preview.cursor.symbol`
-  Cursor symbol inserted into rendered TeX.
-- `latex-math-preview.hover.preview.cursor.color`
-  Cursor color used in rendered preview content.
 
 ## Development
 

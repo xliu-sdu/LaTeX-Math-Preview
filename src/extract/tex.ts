@@ -42,7 +42,7 @@ function findTeX(lines: string[], fullText: string, position: Point): MathSnippe
         const start = match.index
         const end = start + match[0].length
         if (start <= position.character && position.character <= end) {
-            return findHoverOnEnv(lines, fullText, match[1], { line: position.line, character: start })
+            return findMathEnvironment(lines, fullText, match[1], { line: position.line, character: start })
         }
     }
 
@@ -51,14 +51,14 @@ function findTeX(lines: string[], fullText: string, position: Point): MathSnippe
         const start = match.index
         const end = start + match[0].length
         if (start <= position.character && position.character <= end) {
-            return findHoverOnParen(lines, fullText, match[1], { line: position.line, character: start })
+            return findDelimitedMath(lines, fullText, match[1], { line: position.line, character: start })
         }
     }
 
-    return findHoverOnInline(lines, fullText, position)
+    return findInlineMath(lines, fullText, position)
 }
 
-function findHoverOnEnv(lines: string[], fullText: string, envName: string, startPos: Point): MathSnippet | undefined {
+function findMathEnvironment(lines: string[], fullText: string, envName: string, startPos: Point): MathSnippet | undefined {
     const pattern = new RegExp(`\\\\end\\{${escapeRegExp(envName)}\\}`)
     const startPos1 = { line: startPos.line, character: startPos.character + envName.length + '\\begin{}'.length }
     const endPos = findEndPair(lines, pattern, startPos1)
@@ -74,7 +74,7 @@ function findHoverOnEnv(lines: string[], fullText: string, envName: string, star
     }
 }
 
-function findHoverOnParen(lines: string[], fullText: string, envName: string, startPos: Point): MathSnippet | undefined {
+function findDelimitedMath(lines: string[], fullText: string, envName: string, startPos: Point): MathSnippet | undefined {
     const pattern = envName === '\\[' ? /\\\]/ : envName === '\\(' ? /\\\)/ : /\$\$/
     const startPos1 = { line: startPos.line, character: startPos.character + envName.length }
     const endPos = findEndPair(lines, pattern, startPos1)
@@ -90,7 +90,7 @@ function findHoverOnParen(lines: string[], fullText: string, envName: string, st
     }
 }
 
-function findHoverOnInline(lines: string[], fullText: string, position: Point): MathSnippet | undefined {
+function findInlineMath(lines: string[], fullText: string, position: Point): MathSnippet | undefined {
     const currentLine = lines[position.line] ?? ''
     const regex = /(?<!\$|\\)\$(?!\$)(?:\\.|[^\\])+?\$|\\\(.+?\\\)/g
     let m: RegExpExecArray | null

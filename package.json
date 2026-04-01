@@ -1,7 +1,7 @@
 {
   "name": "latex-math-preview",
   "displayName": "LaTeX Math Preview",
-  "description": "Math preview panel for LaTeX and Markdown with cursor preview support.",
+  "description": "Math preview panel for LaTeX and Markdown in VS Code.",
   "version": "0.0.1",
   "publisher": "youjack",
   "license": "MIT",
@@ -59,56 +59,13 @@
           "default": false,
           "description": "Render a cursor marker in the math preview panel."
         },
-        "latex-math-preview.mathPreviewPanel.editorGroup": {
-          "scope": "window",
-          "type": "string",
-          "default": "below",
-          "enum": [
-            "current",
-            "left",
-            "right",
-            "above",
-            "below"
-          ],
-          "description": "The editor group in which to open the math preview panel."
-        },
-        "latex-math-preview.hover.preview.maxLines": {
-          "scope": "window",
-          "type": "number",
-          "default": 20,
-          "description": "Maximum number of lines to scan upward when resolving surrounding math environments."
-        },
-        "latex-math-preview.hover.preview.scale": {
-          "scope": "window",
-          "type": "number",
-          "default": 1,
-          "description": "Scaling factor for rendered math preview."
-        },
-        "latex-math-preview.hover.preview.newcommand.parseTeXFile.enabled": {
-          "scope": "window",
-          "type": "boolean",
-          "default": true,
-          "description": "Parse TeX files in workspace to collect macro definitions for rendering."
-        },
-        "latex-math-preview.hover.preview.newcommand.newcommandFile": {
-          "scope": "window",
-          "type": "string",
-          "default": "",
-          "description": "Optional macro definition file. Relative paths are resolved from workspace root."
-        },
-        "latex-math-preview.hover.preview.cursor.enabled": {
-          "scope": "window",
-          "type": "boolean",
-          "default": true,
-          "description": "Enable cursor insertion in rendered preview content."
-        },
-        "latex-math-preview.hover.preview.cursor.symbol": {
+        "latex-math-preview.mathPreviewPanel.cursor.symbol": {
           "scope": "window",
           "type": "string",
           "default": "\\!|\\!",
-          "description": "Cursor symbol inserted into rendered TeX."
+          "description": "Cursor symbol inserted into rendered TeX in the math preview panel."
         },
-        "latex-math-preview.hover.preview.cursor.color": {
+        "latex-math-preview.mathPreviewPanel.cursor.color": {
           "scope": "window",
           "type": "string",
           "default": "auto",
@@ -134,7 +91,44 @@
             "white",
             "yellow"
           ],
-          "description": "The color of the cursor marker in rendered preview."
+          "description": "The color of the cursor marker in the math preview panel."
+        },
+        "latex-math-preview.mathPreviewPanel.editorGroup": {
+          "scope": "window",
+          "type": "string",
+          "default": "below",
+          "enum": [
+            "current",
+            "left",
+            "right",
+            "above",
+            "below"
+          ],
+          "description": "The editor group in which to open the math preview panel."
+        },
+        "latex-math-preview.mathPreviewPanel.maxLines": {
+          "scope": "window",
+          "type": "number",
+          "default": 20,
+          "description": "Maximum number of lines to scan upward when resolving surrounding math environments for the math preview panel."
+        },
+        "latex-math-preview.mathPreviewPanel.scale": {
+          "scope": "window",
+          "type": "number",
+          "default": 1,
+          "description": "Scaling factor for rendered math in the preview panel."
+        },
+        "latex-math-preview.macros.parseTeXFiles.enabled": {
+          "scope": "window",
+          "type": "boolean",
+          "default": true,
+          "description": "Parse TeX files in the workspace to collect macro definitions for rendering."
+        },
+        "latex-math-preview.macros.file": {
+          "scope": "window",
+          "type": "string",
+          "default": "",
+          "description": "Optional macro definition file. Relative paths are resolved from workspace root."
         }
       }
     }

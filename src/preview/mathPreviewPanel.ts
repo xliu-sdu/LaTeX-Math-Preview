@@ -231,7 +231,7 @@ export class MathPreviewPanelController implements vscode.Disposable {
             document.getText(),
             { line: editor.selection.active.line, character: editor.selection.active.character },
             sourceKind,
-            cfg.previewMaxLines
+            cfg.panelMaxLines
         )
         if (!snippet) {
             // No math at the cursor means the webview should be blank instead of leaving a
@@ -252,13 +252,13 @@ export class MathPreviewPanelController implements vscode.Disposable {
             }
             // Macro collection can walk workspace/config state, so reuse it whenever the
             // cursor movement cannot have changed the available macro set.
-            const macros = cachedMacros ?? await collectMacros(document, cfg.parseTeXFileEnabled, cfg.macroFile)
+            const macros = cachedMacros ?? await collectMacros(document, cfg.parseTeXFilesEnabled, cfg.macroFile)
             const renderTarget = cfg.panelCursorEnabled
                 // Cursor rendering mutates the TeX source before MathJax so the preview can
                 // reflect the insertion point directly in the rendered output.
-                ? { ...snippet, texString: renderCursor(document, snippet, { enabled: cfg.hoverCursorEnabled, symbol: cfg.hoverCursorSymbol, color: cfg.hoverCursorColor }) }
+                ? { ...snippet, texString: renderCursor(document, snippet, { enabled: true, symbol: cfg.panelCursorSymbol, color: cfg.panelCursorColor }) }
                 : snippet
-            const result = await texToSvg(this.mathJax, renderTarget, macros, cfg.previewScale, getThemeTextColor())
+            const result = await texToSvg(this.mathJax, renderTarget, macros, cfg.panelScale, getThemeTextColor())
             if (token !== this.state.updateToken) {
                 // Drop slower renders once a newer update has started.
                 return
