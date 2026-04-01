@@ -20,16 +20,11 @@ export function insertCursorIntoSnippet(
     return texLines.join('\n')
 }
 
-export function normalizeCursorSymbolForTeX(symbol: string): string {
-    return symbol.replace(/\\\\/g, '\\')
-}
-
 export function buildCursorTeX(symbol: string, color: CursorColor): string {
-    const normalizedSymbol = normalizeCursorSymbolForTeX(symbol)
     if (color === 'auto') {
-        return normalizedSymbol
+        return symbol
     }
-    return `{\\color{${color}}${normalizedSymbol}}`
+    return `{\\color{${color}}${symbol}}`
 }
 
 export function findControlWordCommandStart(lineText: string, cursorCharacter: number): number | undefined {

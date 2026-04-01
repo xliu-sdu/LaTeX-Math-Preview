@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCursorTeX, findBackslashRun, findControlWordCommandStart, insertCursorIntoSnippet, normalizeCursorSymbolForTeX, shouldSuppressCursorAtBoundary } from '../../render/cursor-utils'
+import { buildCursorTeX, findBackslashRun, findControlWordCommandStart, insertCursorIntoSnippet, shouldSuppressCursorAtBoundary } from '../../render/cursor-utils'
 
 describe('cursor insertion', () => {
     it('inserts cursor at valid position in single line snippet', () => {
@@ -120,8 +120,7 @@ describe('cursor insertion', () => {
         expect(buildCursorTeX('\\!|\\!', 'black')).toBe('{\\color{black}\\!|\\!}')
     })
 
-    it('normalizes an over-escaped symbol from configuration before rendering', () => {
-        expect(normalizeCursorSymbolForTeX('\\\\!|\\\\!')).toBe('\\!|\\!')
-        expect(buildCursorTeX('\\\\!|\\\\!', 'auto')).toBe('\\!|\\!')
+    it('preserves the configured cursor symbol verbatim', () => {
+        expect(buildCursorTeX('\\\\!|\\\\!', 'auto')).toBe('\\\\!|\\\\!')
     })
 })
