@@ -10,7 +10,7 @@ export class MathJaxService {
     private disposePromise: Promise<void> | undefined
 
     constructor(extensionRoot: string) {
-        const workerPath = path.join(extensionRoot, 'out', 'render', 'mathjax', 'mathjax.worker.js')
+        const workerPath = path.join(extensionRoot, 'dist', 'render', 'mathjax', 'mathjax.worker.js')
         this.pool = workerpool.pool(workerPath, { minWorkers: 1, maxWorkers: 1, workerType: 'process' })
         this.proxy = this.pool.proxy<IMathJaxWorker>()
     }

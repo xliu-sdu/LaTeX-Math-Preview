@@ -114,11 +114,17 @@ Build the installable `.vsix` package:
 
 ```bash
 npm install
-npm run compile
-npx @vscode/vsce package
+npm run package:vsix
 ```
 
 Attach the generated `.vsix` file to a GitHub Release so users can install it directly.
+
+## Bundling Notes
+
+- The extension host entrypoint is bundled with `esbuild` to `dist/extension.js`.
+- The MathJax worker is bundled separately to `dist/render/mathjax/mathjax.worker.js` because `workerpool` needs a real worker script on disk.
+- `vscode` remains external; runtime dependencies such as `mathjax-full` and `workerpool` are bundled into the emitted files.
+- Packaging excludes `node_modules`, so a symlinked `node_modules` does not need to be copied into the VSIX.
 
 ## License
 
