@@ -118,17 +118,20 @@
           "default": 1,
           "description": "Scaling factor for rendered math in the preview panel."
         },
-        "latex-math-preview.macros.parseTeXFiles.enabled": {
+        "latex-math-preview.mathJax.packages": {
           "scope": "window",
-          "type": "boolean",
-          "default": true,
-          "description": "Parse TeX files in the workspace to collect macro definitions for rendering."
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional MathJax TeX packages to enable for rendering. These are appended to the extension's built-in package set."
         },
-        "latex-math-preview.macros.file": {
+        "latex-math-preview.mathJax.macros": {
           "scope": "window",
           "type": "string",
           "default": "",
-          "description": "Optional macro definition file. Relative paths are resolved from workspace root."
+          "description": "Raw TeX macro definitions supported by MathJax, such as \\newcommand or \\DeclareMathOperator."
         }
       }
     }

@@ -26,8 +26,8 @@ describe('getConfig', () => {
             ['mathPreviewPanel.editorGroup', 'right'],
             ['mathPreviewPanel.maxLines', 12],
             ['mathPreviewPanel.scale', 1.25],
-            ['macros.parseTeXFiles.enabled', false],
-            ['macros.file', 'macros.tex']
+            ['mathJax.packages', ['physics', 'unicode']],
+            ['mathJax.macros', '\\newcommand{\\foo}{x}']
         ])
         get.mockImplementation((key: string, fallback: unknown) => values.has(key) ? values.get(key) : fallback)
 
@@ -38,8 +38,8 @@ describe('getConfig', () => {
             panelEditorGroup: 'right',
             panelMaxLines: 12,
             panelScale: 1.25,
-            parseTeXFilesEnabled: false,
-            macroFile: 'macros.tex'
+            mathJaxPackages: ['physics', 'unicode'],
+            mathJaxMacros: '\\newcommand{\\foo}{x}'
         })
         expect(getConfiguration).toHaveBeenCalledWith('latex-math-preview')
         expect(get.mock.calls.map(([key]) => key)).toEqual([
@@ -49,8 +49,8 @@ describe('getConfig', () => {
             'mathPreviewPanel.editorGroup',
             'mathPreviewPanel.maxLines',
             'mathPreviewPanel.scale',
-            'macros.parseTeXFiles.enabled',
-            'macros.file'
+            'mathJax.packages',
+            'mathJax.macros'
         ])
     })
 })

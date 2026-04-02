@@ -33,8 +33,8 @@ type Config = {
     panelEditorGroup: EditorGroup
     panelMaxLines: number
     panelScale: number
-    parseTeXFilesEnabled: boolean
-    macroFile: string
+    mathJaxPackages: string[]
+    mathJaxMacros: string
 }
 
 export function getConfig(): Config {
@@ -46,8 +46,8 @@ export function getConfig(): Config {
         panelEditorGroup: cfg.get<EditorGroup>('mathPreviewPanel.editorGroup', 'below'),
         panelMaxLines: cfg.get<number>('mathPreviewPanel.maxLines', 20),
         panelScale: cfg.get<number>('mathPreviewPanel.scale', 1),
-        parseTeXFilesEnabled: cfg.get<boolean>('macros.parseTeXFiles.enabled', true),
-        macroFile: cfg.get<string>('macros.file', '')
+        mathJaxPackages: cfg.get<string[]>('mathJax.packages', []),
+        mathJaxMacros: cfg.get<string>('mathJax.macros', '')
     }
 }
 

@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 import { getConfig } from '../config'
 import { findMathSnippet, isSupportedMathLanguage } from '../extract'
 import { log, logError } from '../logging'
-import { collectMacros } from '../macros/collector'
 import { MathJaxService, texToSvg } from '../render/mathjax'
 import { getThemeTextColor, renderCursor } from '../render/cursor'
 import { moveWebviewPanel } from '../utils/webview'
@@ -20,9 +19,6 @@ type UpdateEvent = {
 type State = {
     panel: vscode.WebviewPanel | undefined
     prevEditTime: number
-    prevDocumentUri: string | undefined
-    prevCursorPosition: vscode.Position | undefined
-    prevMacros: string | undefined
     updateToken: number
 }
 
@@ -30,9 +26,6 @@ export class MathPreviewPanelController implements vscode.Disposable {
     private readonly state: State = {
         panel: undefined, // Current preview panel instance, if one is open.
         prevEditTime: 0, // Timestamp of the last processed editor change.
-        prevDocumentUri: undefined, // Document shown in the most recent preview update.
-        prevCursorPosition: undefined, // Cursor position used for the last preview update.
-        prevMacros: undefined, // Most recently applied macro set for rendering.
         updateToken: 0 // Incrementing token used to discard stale async updates.
     }
 
@@ -82,7 +75,7 @@ export class MathPreviewPanelController implements vscode.Disposable {
     close() {
         this.state.panel?.dispose()
         this.state.panel = undefined
-        this.clearCache()
+        this.clearState()
         log('Preview', 'Math preview panel closed.')
     }
 
@@ -128,7 +121,7 @@ export class MathPreviewPanelController implements vscode.Disposable {
 
         panel.onDidDispose(() => {
             disposables.dispose()
-            this.clearCache()
+            this.clearState()
             this.state.panel = undefined
             log('Preview', 'Math preview panel disposed.')
         })
@@ -146,11 +139,12 @@ export class MathPreviewPanelController implements vscode.Disposable {
         })
     }
 
-    private clearCache() {
+    private clearState() {
         this.state.prevEditTime = 0
-        this.state.prevDocumentUri = undefined
-        this.state.prevCursorPosition = undefined
-        this.state.prevMacros = undefined
+    }
+
+    refresh() {
+        void this.update({ type: 'manual' })
     }
 
     /**
@@ -208,12 +202,12 @@ export class MathPreviewPanelController implements vscode.Disposable {
         // The preview always follows the active editor. When focus leaves an editor-backed
         // document, clear cached state so the next real update starts fresh.
         if (!editor || !document) {
-            this.clearCache()
+            this.clearState()
             return
         }
         // Only TeX/Markdown-style sources participate in math extraction.
         if (!isSupportedMathLanguage(document.languageId)) {
-            this.clearCache()
+            this.clearState()
             return
         }
 
@@ -234,7 +228,7 @@ export class MathPreviewPanelController implements vscode.Disposable {
         if (!snippet) {
             // No math at the cursor means the webview should be blank instead of leaving a
             // stale render visible from a previous location.
-            this.clearCache()
+            this.clearState()
             await panel.webview.postMessage({ type: 'mathImage', src: '' })
             return
         }
@@ -243,29 +237,16 @@ export class MathPreviewPanelController implements vscode.Disposable {
         const token = this.state.updateToken
 
         try {
-            let cachedMacros: string | undefined
-            if (editor.selection.active.line === this.state.prevCursorPosition?.line && documentUri === this.state.prevDocumentUri) {
-                // Macros only depend on the current document context, not the character within the same line.
-                cachedMacros = this.state.prevMacros
-            }
-            // Macro collection can walk workspace/config state, so reuse it whenever the
-            // cursor movement cannot have changed the available macro set.
-            const macros = cachedMacros ?? await collectMacros(document, cfg.parseTeXFilesEnabled, cfg.macroFile)
             const renderTarget = cfg.panelCursorEnabled
                 // Cursor rendering mutates the TeX source before MathJax so the preview can
                 // reflect the insertion point directly in the rendered output.
                 ? { ...snippet, texString: renderCursor(document, snippet, { enabled: true, symbol: cfg.panelCursorSymbol, color: cfg.panelCursorColor }) }
                 : snippet
-            const result = await texToSvg(this.mathJax, renderTarget, macros, cfg.panelScale, getThemeTextColor())
+            const result = await texToSvg(this.mathJax, renderTarget, cfg.mathJaxMacros, cfg.panelScale, getThemeTextColor())
             if (token !== this.state.updateToken) {
                 // Drop slower renders once a newer update has started.
                 return
             }
-            // Cache the inputs associated with the render we actually published so the next
-            // update can decide whether macro discovery is still reusable.
-            this.state.prevDocumentUri = documentUri
-            this.state.prevCursorPosition = editor.selection.active
-            this.state.prevMacros = result.macros
             await panel.webview.postMessage({ type: 'mathImage', src: result.svgDataUrl })
         } catch (err) {
             // Rendering failures should clear the panel rather than leave the last good image

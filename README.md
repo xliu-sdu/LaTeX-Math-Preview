@@ -10,7 +10,7 @@ This extension renders the math expression at the cursor in a side preview panel
 - Follow the active editor and refresh as you edit.
 - Use a shared math detector for LaTeX and Markdown files.
 - Support `$...$`, `$$...$$`, `\(...\)`, `\[...\]`, and TeX math environments such as `\begin{align}...\end{align}`.
-- Collect macro definitions from the workspace or a configured macro file.
+- Support user-configured MathJax packages and macros through extension settings.
 - Optionally render a cursor marker inside the preview.
 
 ## Installation
@@ -81,10 +81,10 @@ The extension contributes these settings under the `latex-math-preview` namespac
   Maximum number of lines to scan upward when resolving surrounding math environments.
 - `latex-math-preview.mathPreviewPanel.scale`
   Scale factor for rendered math in the preview panel.
-- `latex-math-preview.macros.parseTeXFiles.enabled`
-  Parse TeX files in the workspace to collect macro definitions.
-- `latex-math-preview.macros.file`
-  Optional macro definition file. Relative paths are resolved from the workspace root.
+- `latex-math-preview.mathJax.packages`
+  Additional MathJax TeX packages to enable for rendering.
+- `latex-math-preview.mathJax.macros`
+  Raw TeX macro definitions supported by MathJax.
 
 ## Development
 
