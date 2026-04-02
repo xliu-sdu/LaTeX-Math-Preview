@@ -1,22 +1,12 @@
-import type { MathSnippet, Point, SourceKind } from '../text-model'
-import { findMarkdownMath } from './markdown'
-import { findTexMath } from './tex'
+import type { MathSnippet, Point } from '../text-model'
+import { findSharedMathSnippet } from './finder'
 
-export function findMathSnippet(text: string, position: Point, sourceKind: SourceKind, maxLines: number): MathSnippet | undefined {
-    if (sourceKind === 'markdown') {
-        return findMarkdownMath(text, position, maxLines)
-    }
-    return findTexMath(text, position, maxLines)
+export function findMathSnippet(text: string, position: Point, maxLines: number): MathSnippet | undefined {
+    return findSharedMathSnippet(text, position, maxLines)
 }
 
-export function sourceKindFromLanguageId(languageId: string): SourceKind | undefined {
-    if (isMarkdownLanguage(languageId)) {
-        return 'markdown'
-    }
-    if (isTexLanguage(languageId)) {
-        return 'tex'
-    }
-    return undefined
+export function isSupportedMathLanguage(languageId: string): boolean {
+    return isMarkdownLanguage(languageId) || isTexLanguage(languageId)
 }
 
 export function isTexLanguage(languageId: string): boolean {
@@ -26,4 +16,3 @@ export function isTexLanguage(languageId: string): boolean {
 export function isMarkdownLanguage(languageId: string): boolean {
     return ['markdown', 'mdx', 'quarto'].includes(languageId)
 }
-

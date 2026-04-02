@@ -24,6 +24,11 @@ export class MathJaxService {
         return pending.timeout(3000)
     }
 
+    async validateMacros(arg: string): Promise<void> {
+        const pending = (await this.proxy).validateMacros(arg) as unknown as { timeout: (ms: number) => Promise<void> }
+        await pending.timeout(3000)
+    }
+
     async dispose() {
         if (!this.disposePromise) {
             this.disposePromise = this.pool.terminate(true).then(() => undefined)
@@ -40,16 +45,18 @@ export async function texToSvg(
     color: string
 ): Promise<{ svgDataUrl: string, macros: string }> {
     const texString = mathjaxify(snippet.texString, snippet.envName)
-    const stripped = macros + stripTeX(texString, macros)
-    try {
-        const svg = await service.typeset(stripped, { scale, color })
-        return { svgDataUrl: svgToDataUrl(svg), macros }
-    } catch (error) {
-        if (macros) {
+    if (macros) {
+        const strippedWithMacros = macros + stripTeX(texString, macros)
+        try {
+            await service.validateMacros(macros)
+            const svg = await service.typeset(strippedWithMacros, { scale, color })
+            return { svgDataUrl: svgToDataUrl(svg), macros }
+        } catch (error) {
             console.warn(`MathJax failed with macros; retrying without macro prefix for snippet ${snippet.envName}.`, error)
             const svg = await service.typeset(texString, { scale, color })
             return { svgDataUrl: svgToDataUrl(svg), macros }
         }
-        throw error
     }
+    const svg = await service.typeset(stripTeX(texString, macros), { scale, color })
+    return { svgDataUrl: svgToDataUrl(svg), macros }
 }

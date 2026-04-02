@@ -22,9 +22,9 @@ export function insertCursorIntoSnippet(
 
 export function buildCursorTeX(symbol: string, color: CursorColor): string {
     if (color === 'auto') {
-        return symbol
+        return `{${symbol}}`
     }
-    return `{\\color{${color}}${symbol}}`
+    return `{\\color{${color}}{${symbol}}}`
 }
 
 export function findControlWordCommandStart(lineText: string, cursorCharacter: number): number | undefined {
@@ -33,7 +33,7 @@ export function findControlWordCommandStart(lineText: string, cursorCharacter: n
     while ((m = regex.exec(lineText)) !== null) {
         const start = m.index
         const end = start + m[0].length
-        if (start <= cursorCharacter && cursorCharacter <= end) {
+        if (start <= cursorCharacter && cursorCharacter < end) {
             return start
         }
     }

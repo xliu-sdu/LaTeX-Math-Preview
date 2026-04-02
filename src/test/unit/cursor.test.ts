@@ -30,16 +30,16 @@ describe('cursor insertion', () => {
         expect(rendered).toBe('|\\frac{1}{2}')
     })
 
-    it('normalizes a cursor at the end of a control-word command to the command start', () => {
+    it('does not normalize a cursor at the end of a control-word command', () => {
         const character = findControlWordCommandStart('\\frac{1}{2}', 5) ?? 5
         const rendered = insertCursorIntoSnippet('\\frac{1}{2}', { line: 0, character: 0 }, { line: 0, character }, '|')
-        expect(rendered).toBe('|\\frac{1}{2}')
+        expect(rendered).toBe('\\frac|{1}{2}')
     })
 
-    it('normalizes a cursor immediately after a control-word command with no arguments', () => {
+    it('does not normalize a cursor immediately after a control-word command with no arguments', () => {
         const character = findControlWordCommandStart('\\alpha', 6) ?? 6
         const rendered = insertCursorIntoSnippet('\\alpha', { line: 0, character: 0 }, { line: 0, character }, '|')
-        expect(rendered).toBe('|\\alpha')
+        expect(rendered).toBe('\\alpha|')
     })
 
     it('does not normalize when the cursor is before the backslash or after following text', () => {
@@ -112,15 +112,15 @@ describe('cursor insertion', () => {
         )).toBe(true)
     })
 
-    it('leaves auto cursor color unwrapped so it inherits the math color', () => {
-        expect(buildCursorTeX('\\!|\\!', 'auto')).toBe('\\!|\\!')
+    it('wraps the cursor symbol in braces when color is auto', () => {
+        expect(buildCursorTeX('\\!|\\!', 'auto')).toBe('{\\!|\\!}')
     })
 
-    it('wraps explicit cursor colors in valid TeX', () => {
-        expect(buildCursorTeX('\\!|\\!', 'black')).toBe('{\\color{black}\\!|\\!}')
+    it('wraps explicit cursor colors around a braced symbol', () => {
+        expect(buildCursorTeX('\\!|\\!', 'black')).toBe('{\\color{black}{\\!|\\!}}')
     })
 
-    it('preserves the configured cursor symbol verbatim', () => {
-        expect(buildCursorTeX('\\\\!|\\\\!', 'auto')).toBe('\\\\!|\\\\!')
+    it('preserves the configured cursor symbol content inside braces', () => {
+        expect(buildCursorTeX('\\\\!|\\\\!', 'auto')).toBe('{\\\\!|\\\\!}')
     })
 })

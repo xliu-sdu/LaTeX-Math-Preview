@@ -8,9 +8,8 @@ This extension renders the math expression at the cursor in a side preview panel
 
 - Preview math from LaTeX and Markdown files in a dedicated panel.
 - Follow the active editor and refresh as you edit.
-- Support TeX-style math detection similar to LaTeX-Workshop behavior.
-- Support Markdown math with `$...$`, `$$...$$`, `\\(...\\)`, and `\\[...\\]`.
-- Ignore fenced code blocks and inline code spans in Markdown.
+- Use a shared math detector for LaTeX and Markdown files.
+- Support `$...$`, `$$...$$`, `\(...\)`, `\[...\]`, and TeX math environments such as `\begin{align}...\end{align}`.
 - Collect macro definitions from the workspace or a configured macro file.
 - Optionally render a cursor marker inside the preview.
 
@@ -54,18 +53,17 @@ Default keybinding:
 
 ### LaTeX
 
-Math is detected from TeX sources using LaTeX-oriented delimiter handling.
+LaTeX files use the shared math detector.
 
 ### Markdown
 
-The preview supports:
+Markdown files use the same detector and support:
 
 - Inline math with `$...$`
 - Display math with `$$...$$`
-- Inline math with `\\(...\\)`
-- Display math with `\\[...\\]`
-
-Markdown code fences and inline code spans are ignored.
+- Inline math with `\(...\)`
+- Display math with `\[...\]`
+- TeX math environments such as `\begin{align}...\end{align}`
 
 ## Settings
 

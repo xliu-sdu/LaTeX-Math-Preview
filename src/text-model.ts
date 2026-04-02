@@ -1,5 +1,3 @@
-export type SourceKind = 'tex' | 'markdown'
-
 export type Point = {
     line: number
     character: number
@@ -14,7 +12,6 @@ export type MathSnippet = {
     texString: string
     range: TextRange
     envName: string
-    sourceKind: SourceKind
     inlineDollar?: boolean
 }
 

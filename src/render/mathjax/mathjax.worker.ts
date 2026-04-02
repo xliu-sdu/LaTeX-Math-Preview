@@ -13,16 +13,28 @@ import 'mathjax-full/js/input/tex/AllPackages.js'
 const adaptor = liteAdaptor()
 RegisterHTMLHandler(adaptor)
 
-const baseExtensions: string[] = ['ams', 'base', 'boldsymbol', 'color', 'configmacros', 'mathtools', 'newcommand', 'noerrors', 'noundefined']
+const renderBaseExtensions: string[] = ['ams', 'base', 'boldsymbol', 'color', 'configmacros', 'mathtools', 'newcommand', 'noerrors', 'noundefined']
+const strictBaseExtensions = renderBaseExtensions.filter((pkg) => pkg !== 'noerrors' && pkg !== 'noundefined')
+const inlineSvgStyles = `
+svg { font-size: var(--lmp-scale); color: var(--lmp-color); }
+g[data-mml-node="merror"] > g { fill: red; stroke: red; }
+g[data-mml-node="merror"] > rect[data-background] { fill: yellow; stroke: none; }
+`.trim()
 
-function createConverter(extensions: string[]) {
+function createConverter(extensions: string[], options: { throwOnError?: boolean } = {}) {
     const macrosOption = {
         bm: ['\\boldsymbol{#1}', 1]
     }
     const texOption = {
         packages: extensions,
-        macros: macrosOption,
-        formatError: (_jax: unknown, error: { message: string }) => {
+        macros: macrosOption
+    } as {
+        packages: string[]
+        macros: typeof macrosOption
+        formatError?: (_jax: unknown, error: { message: string }) => never
+    }
+    if (options.throwOnError) {
+        texOption.formatError = (_jax: unknown, error: { message: string }) => {
             throw new Error(error.message)
         }
     }
@@ -36,10 +48,12 @@ function createConverter(extensions: string[]) {
  * Reusable MathJax document used for all conversions in this worker. It starts
  * with the base TeX extensions and is rebuilt when callers request more.
  */
-let htmlConverter = createConverter(baseExtensions)
+let htmlConverter = createConverter(renderBaseExtensions)
+let strictHtmlConverter = createConverter(strictBaseExtensions, { throwOnError: true })
 
 function loadExtensions(extensions: string[]) {
-    htmlConverter = createConverter(baseExtensions.concat(extensions))
+    htmlConverter = createConverter(renderBaseExtensions.concat(extensions))
+    strictHtmlConverter = createConverter(strictBaseExtensions.concat(extensions.filter((pkg) => pkg !== 'noerrors' && pkg !== 'noundefined')), { throwOnError: true })
 }
 
 /**
@@ -59,14 +73,26 @@ function typeset(arg: string, opts: { scale: number, color: string }): string {
         containerWidth: 80 * 18 // Assume an 80em layout width when MathJax computes line breaks.
     }
     const node = htmlConverter.convert(arg, convertOption) as LiteElement
-    const css = `svg {font-size: ${100 * opts.scale}%;} * { color: ${opts.color} }`
+    const css = `:root { --lmp-scale: ${100 * opts.scale}%; --lmp-color: ${opts.color}; }\n${inlineSvgStyles}`
     let svgHtml = adaptor.innerHTML(node)
     // Inject per-render CSS into the first <defs> block so the SVG uses caller-provided scale and color.
     svgHtml = svgHtml.replace(/<defs>/, `<defs><style>${css}</style>`)
     return svgHtml
 }
 
-const workers = { loadExtensions, typeset }
+function validateMacros(arg: string): void {
+    if (!arg.trim()) {
+        return
+    }
+    strictHtmlConverter.convert(`${arg}\nx`, {
+        display: true,
+        em: 18,
+        ex: 9,
+        containerWidth: 80 * 18
+    })
+}
+
+const workers = { loadExtensions, typeset, validateMacros }
 
 /**
  * Public shape of the worker API exposed through workerpool.
@@ -76,6 +102,7 @@ const workers = { loadExtensions, typeset }
 export type IMathJaxWorker = {
     loadExtensions: (...args: Parameters<typeof loadExtensions>) => void
     typeset: (...args: Parameters<typeof typeset>) => string
+    validateMacros: (...args: Parameters<typeof validateMacros>) => void
 }
 
 workerpool.worker(workers)

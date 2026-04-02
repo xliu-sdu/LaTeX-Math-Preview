@@ -62,7 +62,7 @@
         "latex-math-preview.mathPreviewPanel.cursor.symbol": {
           "scope": "window",
           "type": "string",
-          "default": "\\!|\\!",
+          "default": "\\!{|}\\!",
           "description": "Cursor symbol inserted into rendered TeX in the math preview panel."
         },
         "latex-math-preview.mathPreviewPanel.cursor.color": {

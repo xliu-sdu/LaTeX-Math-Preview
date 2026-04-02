@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { getConfig } from '../config'
-import { findMathSnippet, sourceKindFromLanguageId } from '../extract'
+import { findMathSnippet, isSupportedMathLanguage } from '../extract'
 import { log, logError } from '../logging'
 import { collectMacros } from '../macros/collector'
 import { MathJaxService, texToSvg } from '../render/mathjax'
@@ -211,9 +211,8 @@ export class MathPreviewPanelController implements vscode.Disposable {
             this.clearCache()
             return
         }
-        const sourceKind = sourceKindFromLanguageId(document.languageId)
         // Only TeX/Markdown-style sources participate in math extraction.
-        if (!sourceKind) {
+        if (!isSupportedMathLanguage(document.languageId)) {
             this.clearCache()
             return
         }
@@ -230,7 +229,6 @@ export class MathPreviewPanelController implements vscode.Disposable {
         const snippet = findMathSnippet(
             document.getText(),
             { line: editor.selection.active.line, character: editor.selection.active.character },
-            sourceKind,
             cfg.panelMaxLines
         )
         if (!snippet) {

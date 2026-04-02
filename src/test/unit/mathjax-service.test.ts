@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const terminate = vi.fn<() => Promise<void>>()
 const proxy = vi.fn(() => Promise.resolve({
     loadExtensions: vi.fn(),
+    validateMacros: vi.fn(),
     typeset: vi.fn()
 }))
 const pool = {
