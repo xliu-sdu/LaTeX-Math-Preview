@@ -2,26 +2,26 @@ import type { MathSnippet, Point } from '../text-model'
 import { containsPoint } from '../text-model'
 import { makeRange, rangeToText, splitLines } from '../utils/text'
 
-const ENV_NAMES = [
-    'align', 'align\\*', 'alignat', 'alignat\\*', 'aligned', 'alignedat', 'array', 'Bmatrix', 'bmatrix', 'cases', 'CD', 'eqnarray', 'eqnarray\\*', 'equation', 'equation\\*', 'flalign', 'flalign\\*', 'gather', 'gather\\*', 'gathered', 'matrix', 'multline', 'multline\\*', 'pmatrix', 'smallmatrix', 'split', 'subarray', 'subeqnarray', 'subeqnarray\\*', 'Vmatrix', 'vmatrix'
-]
-
 const MATH_ENV_NAMES = [
     'align', 'align\\*', 'alignat', 'alignat\\*', 'eqnarray', 'eqnarray\\*', 'equation', 'equation\\*', 'flalign', 'flalign\\*', 'gather', 'gather\\*', 'multline', 'multline\\*', 'subeqnarray', 'subeqnarray\\*'
 ]
 
 export function findSharedMathSnippet(text: string, position: Point, maxLines: number): MathSnippet | undefined {
     const lines = splitLines(text)
-    const direct = findAtPosition(lines, text, position)
-    if (direct) {
-        return direct
+    const inline = findInlineDollarMath(lines, text, position)
+    if (inline) {
+        return inline
+    }
+
+    const directBlock = findAtPosition(lines, text, position)
+    if (directBlock) {
+        return directBlock
     }
 
     const beginPos = findBeginPair(lines, createMathBeginPattern(), position, maxLines)
     if (!beginPos) {
         return undefined
     }
-
     const snippet = findAtPosition(lines, text, beginPos)
     if (!snippet) {
         return undefined
@@ -35,96 +35,25 @@ export function findSharedMathSnippet(text: string, position: Point, maxLines: n
 }
 
 /**
- * Attempts to resolve a math snippet directly from the given position.
+ * Resolves a single-line `$...$` snippet when the cursor is inside it or on
+ * either outer `$` delimiter.
  *
- * Matching happens in three passes on the current line:
- * - if the position is on a supported `\begin{...}` token, returns that full
- *   environment through its matching `\end{...}`
- * - if the position is on `\[`, `\(`, or `$$`, returns the matching delimited
- *   math block
- * - otherwise, if the position is strictly inside same-line inline math
- *   (`$...$` or `\(...\)`), returns that inline snippet
+ * Behavior:
+ * - matches only single-dollar inline math on the current line
+ * - does not match `$$...$$` display math
+ * - matches when the cursor is on either outer `$` delimiter
  *
- * This helper does not search backward for an earlier opener when the position
- * is inside the body of a multi-line block. `findSharedMathSnippet` handles
- * that fallback separately.
+ * Delimiters such as `\(...\)` and `\[...\]` are handled by the block-math
+ * path elsewhere in `findSharedMathSnippet`.
  */
-function findAtPosition(lines: string[], fullText: string, position: Point): MathSnippet | undefined {
-    const line = lines[position.line] ?? ''
-    const envBeginPattern = createEnvBeginPattern()
-    const delimitedBeginPattern = createDelimitedBeginPattern()
-
-    let match: RegExpExecArray | null
-    // Named math environments use \begin{...}...\end{...} pairs.
-    while ((match = envBeginPattern.exec(line)) !== null) {
-        const start = match.index
-        const end = start + match[0].length
-        if (start <= position.character && position.character <= end) {
-            return findMathEnvironment(lines, fullText, match[1], { line: position.line, character: start })
-        }
-    }
-    // Delimited math uses standalone opening/closing markers such as \[, \(, or $$.
-    while ((match = delimitedBeginPattern.exec(line)) !== null) {
-        const start = match.index
-        const end = start + match[0].length
-        if (start <= position.character && position.character <= end) {
-            return findDelimitedMath(lines, fullText, match[1], { line: position.line, character: start })
-        }
-    }
-
-    return findInlineMath(lines, fullText, position)
-}
-
-function findMathEnvironment(
-    lines: string[],
-    fullText: string,
-    envName: string,
-    startPos: Point
-): MathSnippet | undefined {
-    const pattern = new RegExp(`\\\\end\\{${escapeRegExp(envName)}\\}`)
-    const searchStart = { line: startPos.line, character: startPos.character + envName.length + '\\begin{}'.length }
-    const endPos = findEndPair(lines, pattern, searchStart)
-    if (!endPos) {
-        return undefined
-    }
-
-    const range = makeRange(startPos, endPos)
-    return {
-        texString: rangeToText(fullText, range),
-        range,
-        envName
-    }
-}
-
-function findDelimitedMath(
-    lines: string[],
-    fullText: string,
-    envName: string,
-    startPos: Point
-): MathSnippet | undefined {
-    const pattern = envName === '\\[' ? /\\\]/ : envName === '\\(' ? /\\\)/ : /\$\$/
-    const searchStart = { line: startPos.line, character: startPos.character + envName.length }
-    const endPos = findEndPair(lines, pattern, searchStart)
-    if (!endPos) {
-        return undefined
-    }
-
-    const range = makeRange(startPos, endPos)
-    return {
-        texString: rangeToText(fullText, range),
-        range,
-        envName
-    }
-}
-
-function findInlineMath(lines: string[], fullText: string, position: Point): MathSnippet | undefined {
+function findInlineDollarMath(lines: string[], fullText: string, position: Point): MathSnippet | undefined {
     const currentLine = lines[position.line] ?? ''
-    const inlineMathPattern = createInlineMathPattern()
+    const inlineMathPattern = createInlineDollarMathPattern()
     let match: RegExpExecArray | null
     while ((match = inlineMathPattern.exec(currentLine)) !== null) {
         const matchStart = match.index
         const matchEndExclusive = match.index + match[0].length
-        if (matchStart < position.character && position.character < matchEndExclusive) {
+        if (matchStart <= position.character && position.character <= matchEndExclusive) {
             const range = makeRange(
                 { line: position.line, character: matchStart },
                 { line: position.line, character: matchEndExclusive }
@@ -132,12 +61,88 @@ function findInlineMath(lines: string[], fullText: string, position: Point): Mat
             return {
                 texString: rangeToText(fullText, range),
                 range,
-                envName: match[0].startsWith('\\(') ? '\\(' : '$',
-                inlineDollar: match[0].startsWith('$')
+                envName: '$'
             }
         }
     }
     return undefined
+}
+
+function createInlineDollarMathPattern(): RegExp {
+    return /(?<!\$|\\)\$(?!\$)(?:\\.|[^\\])+?\$/g
+}
+
+/**
+ * Attempts to resolve a block-math snippet directly from the given position.
+ *
+ * Matching happens in three passes on the current line:
+ * - if the position is on a supported standalone math `\begin{...}` token,
+ *   returns that full environment through its matching `\end{...}`
+ * - if the position is on `\[`, `\(`, or `$$`, returns the matching delimited
+ *   math block
+ *
+ * This helper does not search backward for an earlier opener when the position
+ * is inside the body of a multi-line block. `findSharedMathSnippet` handles
+ * that fallback separately.
+ */
+function findAtPosition(lines: string[], fullText: string, position: Point): MathSnippet | undefined {
+    const line = lines[position.line] ?? ''
+    const blockMathBeginPattern = createMathBeginPattern()
+
+    let match: RegExpExecArray | null
+    // Scan the current line for any supported block-math opener:
+    // `\begin{...}` for an environment in `MATH_ENV_NAMES`, `\[`, `\(`, or `$$`.
+    // Treat the cursor as "on" an opener when its character offset is between
+    // the opener's first character and the offset immediately after its last
+    // character, inclusive. When that test passes, resolve the full block by
+    // searching forward for the corresponding closing token.
+    while ((match = blockMathBeginPattern.exec(line)) !== null) {
+        const start = match.index
+        const end = start + match[0].length
+        if (start <= position.character && position.character <= end) {
+            return findBlockMath(lines, fullText, match, { line: position.line, character: start })
+        }
+    }
+
+    return undefined
+}
+
+function createMathBeginPattern(): RegExp {
+    return new RegExp(`\\\\begin\\{(${MATH_ENV_NAMES.join('|')})\\}|\\\\\\[|\\\\\\(|\\$\\$`, 'g')
+}
+
+function findBlockMath(
+    lines: string[],
+    fullText: string,
+    beginMatch: RegExpExecArray,
+    startPos: Point
+): MathSnippet | undefined {
+    const opener = beginMatch[0]
+    const envName = beginMatch[1] ?? opener
+    const pattern = createBlockMathEndPattern(opener, beginMatch[1])
+    const searchStart = { line: startPos.line, character: startPos.character + opener.length }
+    const endPos = findEndPair(lines, pattern, searchStart)
+    if (!endPos) {
+        return undefined
+    }
+
+    const range = makeRange(startPos, endPos)
+    return {
+        texString: rangeToText(fullText, range),
+        range,
+        envName
+    }
+}
+
+function createBlockMathEndPattern(opener: string, envName?: string): RegExp {
+    if (envName) {
+        return new RegExp(`\\\\end\\{${escapeRegExp(envName)}\\}`)
+    }
+    return opener === '\\[' ? /\\\]/ : opener === '\\(' ? /\\\)/ : /\$\$/
+}
+
+function escapeRegExp(str: string): string {
+    return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
 }
 
 function findEndPair(lines: string[], endPattern: RegExp, startPos: Point): Point | undefined {
@@ -190,22 +195,6 @@ function findBeginPair(lines: string[], beginPattern: RegExp, endPos: Point, lim
     return undefined
 }
 
-function createInlineMathPattern(): RegExp {
-    return /(?<!\$|\\)\$(?!\$)(?:\\.|[^\\])+?\$|\\\(.+?\\\)/g
-}
-
-function createDelimitedBeginPattern(): RegExp {
-    return /(\\\[|\\\(|\$\$)/g
-}
-
-function createEnvBeginPattern(): RegExp {
-    return new RegExp(`\\\\begin\\{(${ENV_NAMES.join('|')})\\}`, 'g')
-}
-
-function createMathBeginPattern(): RegExp {
-    return new RegExp(`\\\\begin\\{(${MATH_ENV_NAMES.join('|')})\\}|\\\\\\[|\\\\\\(|\\$\\$`, 'g')
-}
-
 function findLastMatch(text: string, pattern: RegExp): RegExpExecArray | undefined {
     const global = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`)
     let last: RegExpExecArray | undefined
@@ -218,8 +207,4 @@ function findLastMatch(text: string, pattern: RegExp): RegExpExecArray | undefin
 
 function isEndBoundary(point: Point, end: Point): boolean {
     return point.line === end.line && point.character === end.character
-}
-
-function escapeRegExp(str: string): string {
-    return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
 }

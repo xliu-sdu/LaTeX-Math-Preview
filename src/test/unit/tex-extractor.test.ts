@@ -25,11 +25,10 @@ After`
         expect(snippet?.texString).toContain('\\frac{1}{2}')
     })
 
-    it('finds inline dollar math and marks inlineDollar', () => {
+    it('finds inline dollar math', () => {
         const text = 'Value is $x^2 + y^2$ in line.'
         const snippet = findMathSnippet(text, { line: 0, character: 11 }, 20)
         expect(snippet?.envName).toBe('$')
-        expect(snippet?.inlineDollar).toBe(true)
         expect(snippet?.texString).toBe('$x^2 + y^2$')
     })
 
@@ -39,10 +38,17 @@ After`
         expect(findMathSnippet(text, { line: 0, character: 18 }, 20)?.texString).toBe('$x^2 + y^2$')
     })
 
-    it('does not find inline dollar math at the outer cursor boundaries', () => {
+    it('finds inline parenthesized math while the cursor is inside the formula body', () => {
+        const text = String.raw`Value is \(x^2 + y^2\) in line.`
+        const snippet = findMathSnippet(text, { line: 0, character: 12 }, 20)
+        expect(snippet?.envName).toBe('\\(')
+        expect(snippet?.texString).toBe(String.raw`\(` + 'x^2 + y^2' + String.raw`\)`)
+    })
+
+    it('finds inline dollar math at the outer cursor boundaries', () => {
         const text = 'Value is $x^2 + y^2$ in line.'
-        expect(findMathSnippet(text, { line: 0, character: 9 }, 20)).toBeUndefined()
-        expect(findMathSnippet(text, { line: 0, character: 21 }, 20)).toBeUndefined()
+        expect(findMathSnippet(text, { line: 0, character: 9 }, 20)?.texString).toBe('$x^2 + y^2$')
+        expect(findMathSnippet(text, { line: 0, character: 20 }, 20)?.texString).toBe('$x^2 + y^2$')
     })
 
     it('returns undefined for unmatched environment', () => {
@@ -50,6 +56,14 @@ After`
 x + y`
         const snippet = findMathSnippet(text, { line: 1, character: 1 }, 20)
         expect(snippet).toBeUndefined()
+    })
+
+    it('does not treat aligned as a standalone previewable math environment', () => {
+        const text = String.raw`\begin{aligned}
+1+1=2
+\end{aligned}`
+        expect(findMathSnippet(text, { line: 0, character: 8 }, 20)).toBeUndefined()
+        expect(findMathSnippet(text, { line: 1, character: 2 }, 20)).toBeUndefined()
     })
 
     it('does not strip TeX comments while scanning for delimiters', () => {

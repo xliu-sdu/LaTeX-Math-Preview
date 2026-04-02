@@ -10,8 +10,7 @@ describe('texToSvg', () => {
             start: { line: 0, character: 0 },
             end: { line: 0, character: 5 }
         },
-        envName: '$',
-        inlineDollar: true
+        envName: '$'
     }
 
     it('creates deterministic data url for rendered svg', async () => {

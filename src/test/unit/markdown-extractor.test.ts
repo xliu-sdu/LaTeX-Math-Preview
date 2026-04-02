@@ -6,7 +6,6 @@ describe('findMathSnippet markdown', () => {
         const text = 'An inline equation $a+b$ appears here.'
         const snippet = findMathSnippet(text, { line: 0, character: 20 }, 20)
         expect(snippet?.texString).toBe('$a+b$')
-        expect(snippet?.inlineDollar).toBe(true)
     })
 
     it('finds inline markdown math while the cursor is inside the formula body', () => {
@@ -15,10 +14,10 @@ describe('findMathSnippet markdown', () => {
         expect(findMathSnippet(text, { line: 0, character: 22 }, 20)?.texString).toBe('$a+b$')
     })
 
-    it('does not find inline markdown math at the outer cursor boundaries', () => {
+    it('finds inline markdown math at the outer cursor boundaries', () => {
         const text = 'An inline equation $a+b$ appears here.'
-        expect(findMathSnippet(text, { line: 0, character: 19 }, 20)).toBeUndefined()
-        expect(findMathSnippet(text, { line: 0, character: 24 }, 20)).toBeUndefined()
+        expect(findMathSnippet(text, { line: 0, character: 19 }, 20)?.texString).toBe('$a+b$')
+        expect(findMathSnippet(text, { line: 0, character: 24 }, 20)?.texString).toBe('$a+b$')
     })
 
     it('finds block $$ math', () => {
@@ -52,5 +51,15 @@ describe('findMathSnippet markdown', () => {
 After`
         const snippet = findMathSnippet(text, { line: 2, character: 4 }, 20)
         expect(snippet?.envName).toBe('align')
+    })
+
+    it('does not treat aligned as a standalone previewable environment in markdown', () => {
+        const text = String.raw`Before
+\begin{aligned}
+1+1=2
+\end{aligned}
+After`
+        expect(findMathSnippet(text, { line: 1, character: 8 }, 20)).toBeUndefined()
+        expect(findMathSnippet(text, { line: 2, character: 2 }, 20)).toBeUndefined()
     })
 })

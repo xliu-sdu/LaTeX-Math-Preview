@@ -12,7 +12,6 @@ export type MathSnippet = {
     texString: string
     range: TextRange
     envName: string
-    inlineDollar?: boolean
 }
 
 export function comparePoint(a: Point, b: Point): number {
