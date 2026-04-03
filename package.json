@@ -2,7 +2,7 @@
   "name": "latex-math-preview",
   "displayName": "LaTeX Math Preview",
   "description": "Math preview panel for LaTeX and Markdown in VS Code.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "youjack",
   "license": "MIT",
   "repository": {
