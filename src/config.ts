@@ -30,6 +30,8 @@ type Config = {
     panelCursorEnabled: boolean
     panelCursorSymbol: string
     panelCursorColor: CursorColor
+    panelSelectionStartSymbol: string
+    panelSelectionEndSymbol: string
     panelEditorGroup: EditorGroup
     panelMaxLines: number
     panelScale: number
@@ -43,6 +45,8 @@ export function getConfig(): Config {
         panelCursorEnabled: cfg.get<boolean>('mathPreviewPanel.cursor.enabled', false),
         panelCursorSymbol: cfg.get<string>('mathPreviewPanel.cursor.symbol', '\\!|\\!'),
         panelCursorColor: cfg.get<CursorColor>('mathPreviewPanel.cursor.color', 'auto'),
+        panelSelectionStartSymbol: cfg.get<string>('mathPreviewPanel.selection.startSymbol', '\\{'),
+        panelSelectionEndSymbol: cfg.get<string>('mathPreviewPanel.selection.endSymbol', '\\}'),
         panelEditorGroup: cfg.get<EditorGroup>('mathPreviewPanel.editorGroup', 'below'),
         panelMaxLines: cfg.get<number>('mathPreviewPanel.maxLines', 20),
         panelScale: cfg.get<number>('mathPreviewPanel.scale', 1),

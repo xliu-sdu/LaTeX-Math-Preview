@@ -4,6 +4,7 @@ import { findMathSnippet, isSupportedMathLanguage } from '../extract'
 import { log, logError } from '../logging'
 import { MathJaxService, texToSvg } from '../render/mathjax'
 import { getThemeTextColor, renderCursor } from '../render/cursor'
+import type { Point } from '../text-model'
 import { moveWebviewPanel } from '../utils/webview'
 
 type UpdateEvent = {
@@ -223,13 +224,10 @@ export class MathPreviewPanelController implements vscode.Disposable {
             return
         }
 
-        // Extraction is done against the full document text so the finder can honor
-        // surrounding delimiters and line-based limits.
-        const snippet = findMathSnippet(
-            document.getText(),
-            { line: editor.selection.active.line, character: editor.selection.active.character },
-            cfg.panelMaxLines
-        )
+        // Use the caret for empty selections, otherwise look up the math snippet from the selection start.
+        const selection = editor.selection
+        const snippetLookupPoint: Point = selection.isEmpty ? selection.active : selection.anchor
+        const snippet = findMathSnippet(document.getText(), snippetLookupPoint, cfg.panelMaxLines)
         if (!snippet) {
             // No math at the cursor means the webview should be blank instead of leaving a
             // stale render visible from a previous location.
@@ -245,7 +243,16 @@ export class MathPreviewPanelController implements vscode.Disposable {
             const renderTarget = cfg.panelCursorEnabled
                 // Cursor rendering mutates the TeX source before MathJax so the preview can
                 // reflect the insertion point directly in the rendered output.
-                ? { ...snippet, texString: renderCursor(document, snippet, { enabled: true, symbol: cfg.panelCursorSymbol, color: cfg.panelCursorColor }) }
+                ? {
+                    ...snippet,
+                    texString: renderCursor(document, snippet, {
+                        enabled: true,
+                        symbol: cfg.panelCursorSymbol,
+                        color: cfg.panelCursorColor,
+                        selectionStartSymbol: cfg.panelSelectionStartSymbol,
+                        selectionEndSymbol: cfg.panelSelectionEndSymbol
+                    })
+                }
                 : snippet
             const result = await texToSvg(this.mathJax, renderTarget, this.mathJaxMacros, cfg.panelScale, getThemeTextColor())
             if (token !== this.state.updateToken) {

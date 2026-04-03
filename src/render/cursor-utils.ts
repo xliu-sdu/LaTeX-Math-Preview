@@ -7,6 +7,12 @@ type UnsafeToken = {
     allowRight: boolean // cursor may anchor at token end
 }
 
+type MarkerInsertion = {
+    point: Point
+    markerString: string
+    order: number
+}
+
 const STRUCTURAL_CONTROL_WORDS = new Set([
     'frac',
     'sqrt',
@@ -19,25 +25,47 @@ const STRUCTURAL_CONTROL_WORDS = new Set([
 
 export function insertCursorIntoSnippet(
     snippetTex: string,
-    snippetStart: { line: number, character: number },
-    cursor: { line: number, character: number },
+    snippetStart: Point,
+    cursor: Point,
     cursorString: string
 ): string {
-    const line = cursor.line - snippetStart.line
-    const character = cursor.character - (line === 0 ? snippetStart.character : 0)
+    return insertMarkersIntoSnippet(snippetTex, snippetStart, [{ point: cursor, markerString: cursorString }])
+}
+
+export function insertMarkersIntoSnippet(
+    snippetTex: string,
+    snippetStart: Point,
+    markers: Array<{ point: Point, markerString: string }>
+): string {
     const texLines = snippetTex.split('\n')
-    texLines[line] = texLines[line].slice(0, character) + cursorString + texLines[line].slice(character)
+    // Insert from right to left so earlier insertions do not shift later marker positions.
+    const sortedMarkers: MarkerInsertion[] = markers
+        .map((marker, order) => ({ ...marker, order }))
+        .sort((a, b) => {
+            const pointOrder = comparePoint(b.point, a.point)
+            if (pointOrder !== 0) {
+                return pointOrder
+            }
+            // Different selection endpoints can normalize to the same anchor, so keep their insertion order stable.
+            return b.order - a.order
+        })
+
+    for (const marker of sortedMarkers) {
+        const line = marker.point.line - snippetStart.line
+        const character = marker.point.character - (line === 0 ? snippetStart.character : 0)
+        texLines[line] = texLines[line].slice(0, character) + marker.markerString + texLines[line].slice(character)
+    }
     return texLines.join('\n')
 }
 
-export function buildCursorTeX(symbol: string, color: CursorColor): string {
+export function buildMarkerTeX(symbol: string, color: CursorColor): string {
     if (color === 'auto') {
         return `{${symbol}}`
     }
     return `{\\color{${color}}{${symbol}}}`
 }
 
-export function resolveCursorAnchor(
+export function resolveMarkerAnchor(
     snippet: MathSnippet,
     lineText: string,
     cursor: Point

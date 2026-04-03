@@ -125,7 +125,7 @@ function findBlockMath(
     const opener = beginMatch[0]
     const envName = beginMatch[1] ?? opener
     const pattern = createBlockMathEndPattern(opener, beginMatch[1])
-    const searchStart = { line: startPos.line, character: startPos.character + opener.length }
+    const searchStart: Point = { line: startPos.line, character: startPos.character + opener.length }
     const endPos = findEndPair(lines, pattern, searchStart)
     if (!endPos) {
         return undefined

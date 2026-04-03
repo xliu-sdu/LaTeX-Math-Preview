@@ -92,6 +92,8 @@ Example VS Code `settings.json`:
 {
   "latex-math-preview.mathPreviewPanel.cursor.enabled": true,
   "latex-math-preview.mathPreviewPanel.cursor.symbol": "\\!{|}\\!",
+  "latex-math-preview.mathPreviewPanel.selection.startSymbol": "\\!\\{\\!",
+	"latex-math-preview.mathPreviewPanel.selection.endSymbol": "\\!\\}\\!",
   "latex-math-preview.mathPreviewPanel.cursor.color": "magenta",
   "latex-math-preview.mathPreviewPanel.editorGroup": "below",
   "latex-math-preview.mathPreviewPanel.maxLines": 20,

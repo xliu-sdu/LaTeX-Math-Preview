@@ -57,7 +57,7 @@
           "scope": "window",
           "type": "boolean",
           "default": false,
-          "description": "Render a cursor marker in the math preview panel."
+          "description": "Render cursor markers and selection range markers in the math preview panel."
         },
         "latex-math-preview.mathPreviewPanel.cursor.symbol": {
           "scope": "window",
@@ -91,7 +91,19 @@
             "white",
             "yellow"
           ],
-          "description": "The color of the cursor marker in the math preview panel."
+          "description": "The color of cursor and selection markers in the math preview panel."
+        },
+        "latex-math-preview.mathPreviewPanel.selection.startSymbol": {
+          "scope": "window",
+          "type": "string",
+          "default": "\\!\\{\\!",
+          "description": "Selection start symbol inserted into rendered TeX in the math preview panel."
+        },
+        "latex-math-preview.mathPreviewPanel.selection.endSymbol": {
+          "scope": "window",
+          "type": "string",
+          "default": "\\!\\}\\!",
+          "description": "Selection end symbol inserted into rendered TeX in the math preview panel."
         },
         "latex-math-preview.mathPreviewPanel.editorGroup": {
           "scope": "window",

@@ -1,5 +1,4 @@
 import * as assert from 'node:assert'
-import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 describe('Extension Integration', () => {
@@ -12,16 +11,22 @@ describe('Extension Integration', () => {
     })
 
     it('updates can run for tex and markdown fixtures without throwing', async () => {
-        const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-        assert.ok(workspace)
-        const texDoc = await vscode.workspace.openTextDocument(path.join(workspace!, 'test.tex'))
-        await vscode.window.showTextDocument(texDoc)
+        const texDoc = await vscode.workspace.openTextDocument({
+            language: 'latex',
+            content: '$a+b$'
+        })
+        const texEditor = await vscode.window.showTextDocument(texDoc)
         await vscode.commands.executeCommand('latex-math-preview.openMathPreviewPanel')
+        texEditor.selection = new vscode.Selection(0, 1, 0, 4)
         await vscode.commands.executeCommand('type', { text: ' ' })
         await vscode.commands.executeCommand('undo')
 
-        const mdDoc = await vscode.workspace.openTextDocument(path.join(workspace!, 'test.md'))
-        await vscode.window.showTextDocument(mdDoc)
+        const mdDoc = await vscode.workspace.openTextDocument({
+            language: 'markdown',
+            content: 'Inline math $a+b$ here.'
+        })
+        const mdEditor = await vscode.window.showTextDocument(mdDoc)
+        mdEditor.selection = new vscode.Selection(0, 13, 0, 16)
         await vscode.commands.executeCommand('type', { text: ' ' })
         await vscode.commands.executeCommand('undo')
         await vscode.commands.executeCommand('latex-math-preview.closeMathPreviewPanel')

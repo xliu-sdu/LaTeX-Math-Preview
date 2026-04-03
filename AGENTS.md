@@ -30,6 +30,7 @@ It provides:
 - Use native webview resource URIs. Do not add an internal HTTP asset server unless explicitly required.
 - Prefer matching LaTeX-Workshop behavior for TeX math handling unless the repo already documents a deliberate deviation.
 - Keep math detection and cursor rendering behavior internally consistent, predictable, and backed by tests rather than scattered special cases.
+- Store document positions in the shared `Point` type from `src/text-model.ts` instead of ad hoc `{ line, character }` object types.
 - Keep unit tests pure where possible; avoid pulling `vscode` into unit-only modules.
 
 ## Commands
