@@ -86,6 +86,21 @@ The extension contributes these settings under the `latex-math-preview` namespac
 - `latex-math-preview.mathJax.macros`
   Raw TeX macro definitions supported by MathJax.
 
+Example VS Code `settings.json`:
+
+```json
+{
+  "latex-math-preview.mathPreviewPanel.cursor.enabled": true,
+  "latex-math-preview.mathPreviewPanel.cursor.symbol": "\\!{|}\\!",
+  "latex-math-preview.mathPreviewPanel.cursor.color": "magenta",
+  "latex-math-preview.mathPreviewPanel.editorGroup": "below",
+  "latex-math-preview.mathPreviewPanel.maxLines": 20,
+  "latex-math-preview.mathPreviewPanel.scale": 1.5,
+  "latex-math-preview.mathJax.packages": ["physics"],
+  "latex-math-preview.mathJax.macros": "\\newcommand{\\R}{\\mathbb{R}}\\n\\DeclareMathOperator{\\sgn}{sgn}"
+}
+```
+
 ## Development
 
 Install dependencies and compile:
