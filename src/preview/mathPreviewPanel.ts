@@ -33,7 +33,8 @@ export class MathPreviewPanelController implements vscode.Disposable {
 
     constructor(
         private readonly context: vscode.ExtensionContext,
-        private readonly mathJax: MathJaxService
+        private readonly mathJax: MathJaxService,
+        private mathJaxMacros: string
     ) {
         this.serializer = {
             deserializeWebviewPanel: async (panel) => {
@@ -147,6 +148,10 @@ export class MathPreviewPanelController implements vscode.Disposable {
         void this.update({ type: 'manual' })
     }
 
+    setMathJaxMacros(macros: string) {
+        this.mathJaxMacros = macros
+    }
+
     /**
      * Builds the initial webview HTML shell for the math preview panel.
      * Includes CSP and script wiring; the rendered math image is populated later
@@ -242,7 +247,7 @@ export class MathPreviewPanelController implements vscode.Disposable {
                 // reflect the insertion point directly in the rendered output.
                 ? { ...snippet, texString: renderCursor(document, snippet, { enabled: true, symbol: cfg.panelCursorSymbol, color: cfg.panelCursorColor }) }
                 : snippet
-            const result = await texToSvg(this.mathJax, renderTarget, cfg.mathJaxMacros, cfg.panelScale, getThemeTextColor())
+            const result = await texToSvg(this.mathJax, renderTarget, this.mathJaxMacros, cfg.panelScale, getThemeTextColor())
             if (token !== this.state.updateToken) {
                 // Drop slower renders once a newer update has started.
                 return

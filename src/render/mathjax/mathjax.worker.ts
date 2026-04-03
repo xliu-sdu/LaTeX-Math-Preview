@@ -80,15 +80,16 @@ function typeset(arg: string, opts: { scale: number, color: string }): string {
     return svgHtml
 }
 
+/**
+ * Validates a macro preamble with a dummy math token.
+ * Returns nothing and throws on invalid input.
+ */
 function validateMacros(arg: string): void {
     if (!arg.trim()) {
         return
     }
     strictHtmlConverter.convert(`${arg}\nx`, {
-        display: true,
-        em: 18,
-        ex: 9,
-        containerWidth: 80 * 18
+        display: true
     })
 }
 

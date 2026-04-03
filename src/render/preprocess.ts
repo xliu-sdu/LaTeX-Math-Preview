@@ -2,38 +2,36 @@ import { stripComments } from '../utils/text'
 
 const SVG_VIEWBOX_MARGIN_EX = 0.5
 
-export function mathjaxify(tex: string, envName: string, options: { stripLabel: boolean } = { stripLabel: true }): string {
+export function mathjaxify(tex: string, envName: string): string {
+    // Strip comments.
     let content = stripComments(tex)
-    if (options.stripLabel) {
-        content = content.replace(/\\label\{.*?\}/g, '')
-    }
-    if (envName.match(/^(aligned|alignedat|array|Bmatrix|bmatrix|cases|CD|gathered|matrix|pmatrix|smallmatrix|split|subarray|Vmatrix|vmatrix)$/)) {
-        content = `\\begin{equation}${content}\\end{equation}`
-    }
+    // Strip labels.
+    content = content.replace(/\\label\{.*?\}/g, '')
+    // Rewrite subeqnarray.
     if (envName.match(/^subeqnarray\*?$/)) {
         content = content.replace(/\\(begin|end)\{subeqnarray\*?\}/g, '\\$1{eqnarray}')
     }
+    // Expand bracket aliases.
     content = content.replace(/\\llbracket(?!\w)/g, '\\left[\\!\\left[')
         .replace(/\\rrbracket(?!\w)/g, '\\right]\\!\\right]')
     return content
 }
 
-export function stripTeX(tex: string, macros: string): string {
-    if (tex.startsWith('$$') && tex.endsWith('$$')) {
-        tex = tex.slice(2, tex.length - 2)
-    } else if (tex.startsWith('$') && tex.endsWith('$')) {
-        tex = tex.slice(1, tex.length - 1)
-    } else if (tex.startsWith('\\(') && tex.endsWith('\\)')) {
-        tex = tex.slice(2, tex.length - 2)
-    } else if (tex.startsWith('\\[') && tex.endsWith('\\]')) {
-        tex = tex.slice(2, tex.length - 2)
+export function stripMathDelimiters(tex: string, envName: string): string {
+    switch (envName) {
+        case '$$':
+        case '$':
+        case '\\(':
+        case '\\[':
+            return tex.slice(envName.length, tex.length - envName.length)
+        default:
+            return tex
     }
-    for (const match of macros.matchAll(/\\newcommand\{(.*?)\}/g)) {
-        if (match[1]) {
-            tex = tex.replaceAll(`${match[1]}*`, match[1])
-        }
-    }
-    return tex
+}
+
+export function svgToDataUrl(xml: string): string {
+    const svg64 = Buffer.from(addSvgViewBoxMargin(xml), 'utf8').toString('base64')
+    return `data:image/svg+xml;base64,${svg64}`
 }
 
 export function addSvgViewBoxMargin(xml: string): string {
@@ -62,11 +60,6 @@ export function addSvgViewBoxMargin(xml: string): string {
         .replace(viewBoxMatch[0], `viewBox="${nextViewBox}"`)
         .replace(widthMatch[0], `width="${nextWidth}"`)
         .replace(heightMatch[0], `height="${nextHeight}"`)
-}
-
-export function svgToDataUrl(xml: string): string {
-    const svg64 = Buffer.from(addSvgViewBoxMargin(xml), 'utf8').toString('base64')
-    return `data:image/svg+xml;base64,${svg64}`
 }
 
 function formatSvgNumber(value: number): string {

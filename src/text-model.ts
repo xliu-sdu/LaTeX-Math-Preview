@@ -1,6 +1,6 @@
 export type Point = {
-    line: number
-    character: number
+    line: number // the zero-based line value
+    character: number // the zero-based character value
 }
 
 export type TextRange = {
@@ -14,6 +14,7 @@ export type MathSnippet = {
     envName: string
 }
 
+/** Compares two points in document order, returning a negative, zero, or positive value. */
 export function comparePoint(a: Point, b: Point): number {
     if (a.line !== b.line) {
         return a.line - b.line

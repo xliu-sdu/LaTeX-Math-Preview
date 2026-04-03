@@ -1,9 +1,10 @@
 import * as path from 'node:path'
 import * as workerpool from 'workerpool'
 import type { MathSnippet } from '../text-model'
-import { mathjaxify, stripTeX, svgToDataUrl } from './preprocess'
+import { mathjaxify, stripMathDelimiters, svgToDataUrl } from './preprocess'
 import type { IMathJaxWorker } from './mathjax/mathjax.worker'
 
+/** Thin wrapper around `IMathJaxWorker` that adds proxy setup, timeouts, and lifecycle management. */
 export class MathJaxService {
     private readonly pool: workerpool.Pool
     private readonly proxy: Promise<any>
@@ -43,20 +44,11 @@ export async function texToSvg(
     macros: string,
     scale: number,
     color: string
-): Promise<{ svgDataUrl: string, macros: string }> {
+): Promise<{ svgDataUrl: string }> {
     const texString = mathjaxify(snippet.texString, snippet.envName)
-    if (macros) {
-        const strippedWithMacros = macros + stripTeX(texString, macros)
-        try {
-            await service.validateMacros(macros)
-            const svg = await service.typeset(strippedWithMacros, { scale, color })
-            return { svgDataUrl: svgToDataUrl(svg), macros }
-        } catch (error) {
-            console.warn(`MathJax failed with macros; retrying without macro prefix for snippet ${snippet.envName}.`, error)
-            const svg = await service.typeset(texString, { scale, color })
-            return { svgDataUrl: svgToDataUrl(svg), macros }
-        }
-    }
-    const svg = await service.typeset(stripTeX(texString, macros), { scale, color })
-    return { svgDataUrl: svgToDataUrl(svg), macros }
+    // Normalize delimiter-based snippets once so configured macros are prefixed to a canonical MathJax input.
+    const strippedTexString = stripMathDelimiters(texString, snippet.envName)
+    const input = macros ? macros + strippedTexString : strippedTexString
+    const svg = await service.typeset(input, { scale, color })
+    return { svgDataUrl: svgToDataUrl(svg) }
 }

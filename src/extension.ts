@@ -14,7 +14,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const cfg = getConfig()
     mathJax = new MathJaxService(extensionRoot)
     await mathJax.initialize(cfg.mathJaxPackages)
-    controller = new MathPreviewPanelController(context, mathJax)
+    const mathJaxMacros = await resolveEffectiveMathJaxMacros(cfg.mathJaxMacros)
+    controller = new MathPreviewPanelController(context, mathJax, mathJaxMacros)
 
     context.subscriptions.push(
         vscode.commands.registerCommand('latex-math-preview.openMathPreviewPanel', () => controller?.toggle('open')),
@@ -48,8 +49,22 @@ async function handleConfigurationChange(event: vscode.ConfigurationChangeEvent)
         if (event.affectsConfiguration('latex-math-preview.mathJax.packages')) {
             await mathJax?.initialize(cfg.mathJaxPackages)
         }
+        controller?.setMathJaxMacros(await resolveEffectiveMathJaxMacros(cfg.mathJaxMacros))
         controller?.refresh()
     } catch (err) {
         logError('Extension', 'Failed applying MathJax configuration update.', err)
+    }
+}
+
+async function resolveEffectiveMathJaxMacros(macros: string): Promise<string> {
+    if (!macros.trim()) {
+        return ''
+    }
+    try {
+        await mathJax?.validateMacros(macros)
+        return macros
+    } catch (err) {
+        logError('Extension', 'Configured MathJax macros are invalid; disabling macros until settings change.', err)
+        return ''
     }
 }

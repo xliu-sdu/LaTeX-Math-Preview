@@ -19,7 +19,6 @@ It provides:
 - `src/preview/mathPreviewPanel.ts`: panel lifecycle, serializer, refresh logic
 - `src/extract/`: TeX and Markdown math extraction
 - `src/render/`: preprocessing, cursor insertion, MathJax service
-- `src/macros/collector.ts`: macro discovery from workspace/config
 - `src/test/unit/`: Vitest unit tests
 - `src/test/suite/`: VS Code integration tests
 - `media/mathpreview.js`: webview script
@@ -30,7 +29,7 @@ It provides:
 - Preserve the existing split between extraction, rendering, panel control, and tests.
 - Use native webview resource URIs. Do not add an internal HTTP asset server unless explicitly required.
 - Prefer matching LaTeX-Workshop behavior for TeX math handling unless the repo already documents a deliberate deviation.
-- Markdown support should continue to ignore fenced code blocks and inline code spans.
+- Keep math detection and cursor rendering behavior internally consistent, predictable, and backed by tests rather than scattered special cases.
 - Keep unit tests pure where possible; avoid pulling `vscode` into unit-only modules.
 
 ## Commands
@@ -50,6 +49,7 @@ It provides:
 ## Change Guidance
 
 - If you change extraction behavior, update both TeX/Markdown tests and any affected integration coverage.
+- If you change detection or cursor-placement rules, update implementation, tests, and repository guidance together so behavior and documentation do not drift.
 - If you change panel update timing or cursor behavior, verify debounce behavior and selection/edit-triggered refreshes.
 - If you change MathJax worker wiring, re-run compile plus both test suites.
 - Avoid broad refactors unless they materially improve correctness or maintainability.

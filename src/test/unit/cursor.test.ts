@@ -1,7 +1,252 @@
-import { describe, expect, it } from 'vitest'
-import { buildCursorTeX, findBackslashRun, findControlWordCommandStart, insertCursorIntoSnippet, shouldSuppressCursorAtBoundary } from '../../render/cursor-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { TextDocument } from 'vscode'
+import type { MathSnippet } from '../../text-model'
 
-describe('cursor insertion', () => {
+const { activeTextEditor, activeColorTheme } = vi.hoisted(() => ({
+    activeTextEditor: { current: undefined as { selection: { active: { line: number, character: number } } } | undefined },
+    activeColorTheme: { kind: 1 }
+}))
+
+vi.mock('vscode', () => ({
+    window: {
+        get activeTextEditor() {
+            return activeTextEditor.current
+        },
+        activeColorTheme
+    },
+    ColorThemeKind: {
+        Light: 1,
+        Dark: 2
+    }
+}))
+
+import { buildCursorTeX, insertCursorIntoSnippet } from '../../render/cursor-utils'
+import { getThemeTextColor, renderCursor } from '../../render/cursor'
+
+describe('cursor rendering', () => {
+    beforeEach(() => {
+        activeTextEditor.current = undefined
+        activeColorTheme.kind = 1
+    })
+
+    it('returns the original snippet when cursor rendering is disabled', () => {
+        const snippet = inlineSnippet('$a+b$')
+        const rendered = renderCursor(
+            createDocument(['$a+b$']),
+            snippet,
+            { enabled: false, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$a+b$')
+    })
+
+    it('returns the original snippet when there is no active editor', () => {
+        const snippet = inlineSnippet('$a+b$')
+        const rendered = renderCursor(
+            createDocument(['$a+b$']),
+            snippet,
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$a+b$')
+    })
+
+    it('returns the original snippet when the cursor is outside the snippet range', () => {
+        activeTextEditor.current = { selection: { active: { line: 1, character: 0 } } }
+        const rendered = renderCursor(
+            createDocument(['$a+b$', 'c+d']),
+            inlineSnippet('$a+b$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$a+b$')
+    })
+
+    it('inserts the cursor inside inline math', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 2 } } }
+        const rendered = renderCursor(
+            createDocument(['$a+b$']),
+            inlineSnippet('$a+b$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$a{|}+b$')
+    })
+
+    it('renders the cursor at the math body start when the cursor is on the opening delimiter', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 0 } } }
+        const rendered = renderCursor(
+            createDocument(['$a+b$']),
+            inlineSnippet('$a+b$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('${|}a+b$')
+    })
+
+    it('allows insertion at the end of the math body before the closing delimiter', () => {
+        activeTextEditor.current = { selection: { active: { line: 2, character: 0 } } }
+        const rendered = renderCursor(
+            createDocument(['$$', '1+1=2', '$$']),
+            {
+                texString: '$$\n1+1=2\n$$',
+                range: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 2, character: 2 }
+                },
+                envName: '$$'
+            },
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$$\n1+1=2\n{|}$$')
+    })
+
+    it('renders inside opening and closing display delimiters by snapping to body boundaries', () => {
+        const snippet = {
+            texString: '$$\n1+1=2\n$$',
+            range: {
+                start: { line: 0, character: 0 },
+                end: { line: 2, character: 2 }
+            },
+            envName: '$$'
+        }
+
+        activeTextEditor.current = { selection: { active: { line: 0, character: 1 } } }
+        expect(renderCursor(
+            createDocument(['$$', '1+1=2', '$$']),
+            snippet,
+            { enabled: true, symbol: '|', color: 'auto' }
+        )).toBe('$${|}\n1+1=2\n$$')
+
+        activeTextEditor.current = { selection: { active: { line: 2, character: 1 } } }
+        expect(renderCursor(
+            createDocument(['$$', '1+1=2', '$$']),
+            snippet,
+            { enabled: true, symbol: '|', color: 'auto' }
+        )).toBe('$$\n1+1=2\n{|}$$')
+    })
+
+    it('snaps inside structural control words to the left boundary', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 3 } } }
+        const rendered = renderCursor(
+            createDocument(['$\\frac{1}{2}$']),
+            inlineSnippet('$\\frac{1}{2}$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('${|}\\frac{1}{2}$')
+    })
+
+    it('snaps exact right-edge positions of left-only control words to the left boundary', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 6 } } }
+        const rendered = renderCursor(
+            createDocument(['$\\frac{1}{2}$']),
+            inlineSnippet('$\\frac{1}{2}$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('${|}\\frac{1}{2}$')
+    })
+
+    it('does not normalize after a control-word command with no arguments', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 7 } } }
+        const rendered = renderCursor(
+            createDocument(['$\\alpha x$']),
+            inlineSnippet('$\\alpha x$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$\\alpha{|} x$')
+    })
+
+    it('snaps inside control words to the nearest legal boundary', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 6 } } }
+        const rendered = renderCursor(
+            createDocument(['$\\alpha$']),
+            inlineSnippet('$\\alpha$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$\\alpha{|}$')
+    })
+
+    it('breaks nearest-boundary ties to the left inside control words', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 4 } } }
+        const rendered = renderCursor(
+            createDocument(['$\\alpha$']),
+            inlineSnippet('$\\alpha$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('${|}\\alpha$')
+    })
+
+    it('breaks nearest-boundary ties to the left inside backslash runs', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 2 } } }
+        const rendered = renderCursor(
+            createDocument(['$\\\\$']),
+            inlineSnippet('$\\\\$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('${|}\\\\$')
+    })
+
+    it('snaps a cursor placed after a trailing lone backslash to the left of the escape', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 3 } } }
+        const rendered = renderCursor(
+            createDocument(['$a\\$']),
+            inlineSnippet('$a\\$'),
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('$a{|}\\$')
+    })
+
+    it('renders inside opening environment commands by snapping to the body start', () => {
+        activeTextEditor.current = { selection: { active: { line: 0, character: 4 } } }
+        const snippet: MathSnippet = {
+            texString: '\\begin{align}\na+b\n\\end{align}',
+            range: {
+                start: { line: 0, character: 0 },
+                end: { line: 2, character: 11 }
+            },
+            envName: 'align'
+        }
+        const rendered = renderCursor(
+            createDocument(['\\begin{align}', 'a+b', '\\end{align}']),
+            snippet,
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('\\begin{align}{|}\na+b\n\\end{align}')
+    })
+
+    it('renders inside closing environment commands by snapping to the body end', () => {
+        activeTextEditor.current = { selection: { active: { line: 2, character: 4 } } }
+        const snippet: MathSnippet = {
+            texString: '\\begin{align}\na+b\n\\end{align}',
+            range: {
+                start: { line: 0, character: 0 },
+                end: { line: 2, character: 11 }
+            },
+            envName: 'align'
+        }
+        const rendered = renderCursor(
+            createDocument(['\\begin{align}', 'a+b', '\\end{align}']),
+            snippet,
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('\\begin{align}\na+b\n{|}\\end{align}')
+    })
+
+    it('snaps comment positions to the comment start instead of hiding the cursor', () => {
+        activeTextEditor.current = { selection: { active: { line: 1, character: 8 } } }
+        const snippet: MathSnippet = {
+            texString: '\\begin{align}\na+b % note\n\\end{align}',
+            range: {
+                start: { line: 0, character: 0 },
+                end: { line: 2, character: 11 }
+            },
+            envName: 'align'
+        }
+        const rendered = renderCursor(
+            createDocument(['\\begin{align}', 'a+b % note', '\\end{align}']),
+            snippet,
+            { enabled: true, symbol: '|', color: 'auto' }
+        )
+        expect(rendered).toBe('\\begin{align}\na+b {|}% note\n\\end{align}')
+    })
+})
+
+describe('cursor helpers', () => {
     it('inserts cursor at valid position in single line snippet', () => {
         const rendered = insertCursorIntoSnippet('$a+b$', { line: 10, character: 3 }, { line: 10, character: 5 }, '|')
         expect(rendered).toBe('$a|+b$')
@@ -11,105 +256,6 @@ describe('cursor insertion', () => {
         const tex = '\\begin{align}\na+b\n\\end{align}'
         const rendered = insertCursorIntoSnippet(tex, { line: 2, character: 0 }, { line: 3, character: 1 }, '|')
         expect(rendered).toContain('\na|+b\n')
-    })
-
-    it('returns undefined for out-of-range cursor', () => {
-        const rendered = insertCursorIntoSnippet('$a+b$', { line: 0, character: 0 }, { line: 2, character: 0 }, '|')
-        expect(rendered).toBeUndefined()
-    })
-
-    it('keeps a cursor already at a control-word command start at that start position', () => {
-        const character = findControlWordCommandStart('\\frac{1}{2}', 0) ?? 0
-        const rendered = insertCursorIntoSnippet('\\frac{1}{2}', { line: 0, character: 0 }, { line: 0, character }, '|')
-        expect(rendered).toBe('|\\frac{1}{2}')
-    })
-
-    it('normalizes a cursor inside a control-word command to the command start', () => {
-        const character = findControlWordCommandStart('\\frac{1}{2}', 3) ?? 3
-        const rendered = insertCursorIntoSnippet('\\frac{1}{2}', { line: 0, character: 0 }, { line: 0, character }, '|')
-        expect(rendered).toBe('|\\frac{1}{2}')
-    })
-
-    it('does not normalize a cursor at the end of a control-word command', () => {
-        const character = findControlWordCommandStart('\\frac{1}{2}', 5) ?? 5
-        const rendered = insertCursorIntoSnippet('\\frac{1}{2}', { line: 0, character: 0 }, { line: 0, character }, '|')
-        expect(rendered).toBe('\\frac|{1}{2}')
-    })
-
-    it('does not normalize a cursor immediately after a control-word command with no arguments', () => {
-        const character = findControlWordCommandStart('\\alpha', 6) ?? 6
-        const rendered = insertCursorIntoSnippet('\\alpha', { line: 0, character: 0 }, { line: 0, character }, '|')
-        expect(rendered).toBe('\\alpha|')
-    })
-
-    it('does not normalize when the cursor is before the backslash or after following text', () => {
-        expect(findControlWordCommandStart('x\\frac{1}{2}', 0)).toBeUndefined()
-        expect(findControlWordCommandStart('\\alpha x', 7)).toBeUndefined()
-    })
-
-    it('does not normalize control symbols or environment commands', () => {
-        expect(findControlWordCommandStart('\\(', 1)).toBeUndefined()
-        expect(findControlWordCommandStart('\\\\', 1)).toBeUndefined()
-        expect(findControlWordCommandStart('\\begin{align}', 3)).toBeUndefined()
-    })
-
-    it('normalizes a lone backslash before the cursor to the run start', () => {
-        const run = findBackslashRun('\\', 1)
-        const rendered = insertCursorIntoSnippet('\\', { line: 0, character: 0 }, { line: 0, character: run?.start ?? 1 }, '|')
-        expect(rendered).toBe('|\\')
-    })
-
-    it('normalizes a cursor inside a backslash run to the front of the run', () => {
-        const run = findBackslashRun('\\\\', 1)
-        const rendered = insertCursorIntoSnippet('\\\\', { line: 0, character: 0 }, { line: 0, character: run?.start ?? 1 }, '|')
-        expect(rendered).toBe('|\\\\')
-    })
-
-    it('normalizes a cursor at the end of a backslash run to the front of the run', () => {
-        const run = findBackslashRun('\\\\', 2)
-        const rendered = insertCursorIntoSnippet('\\\\', { line: 0, character: 0 }, { line: 0, character: run?.start ?? 2 }, '|')
-        expect(rendered).toBe('|\\\\')
-    })
-
-    it('normalizes longer backslash runs to their first backslash', () => {
-        const run = findBackslashRun('\\\\\\', 3)
-        const rendered = insertCursorIntoSnippet('\\\\\\', { line: 0, character: 0 }, { line: 0, character: run?.start ?? 3 }, '|')
-        expect(rendered).toBe('|\\\\\\')
-    })
-
-    it('does not detect a backslash run when the cursor is outside the run', () => {
-        expect(findBackslashRun('\\alpha', 2)).toBeUndefined()
-        expect(findBackslashRun('x\\\\', 0)).toBeUndefined()
-    })
-
-    it('allows snippet-start insertion when a control-word command resolves there', () => {
-        expect(shouldSuppressCursorAtBoundary(
-            {
-                start: { line: 0, character: 0 },
-                end: { line: 0, character: 5 }
-            },
-            { line: 0, character: 0 },
-            true
-        )).toBe(false)
-    })
-
-    it('still suppresses non-normalized snippet-start and snippet-end insertions', () => {
-        expect(shouldSuppressCursorAtBoundary(
-            {
-                start: { line: 0, character: 0 },
-                end: { line: 0, character: 5 }
-            },
-            { line: 0, character: 0 },
-            false
-        )).toBe(true)
-        expect(shouldSuppressCursorAtBoundary(
-            {
-                start: { line: 0, character: 0 },
-                end: { line: 0, character: 5 }
-            },
-            { line: 0, character: 5 },
-            true
-        )).toBe(true)
     })
 
     it('wraps the cursor symbol in braces when color is auto', () => {
@@ -123,4 +269,33 @@ describe('cursor insertion', () => {
     it('preserves the configured cursor symbol content inside braces', () => {
         expect(buildCursorTeX('\\\\!|\\\\!', 'auto')).toBe('{\\\\!|\\\\!}')
     })
+
+    it('returns light theme text color for light themes', () => {
+        activeColorTheme.kind = 1
+        expect(getThemeTextColor()).toBe('#000000')
+    })
+
+    it('returns dark theme text color for dark themes', () => {
+        activeColorTheme.kind = 2
+        expect(getThemeTextColor()).toBe('#ffffff')
+    })
 })
+
+function inlineSnippet(texString: string): MathSnippet {
+    return {
+        texString,
+        range: {
+            start: { line: 0, character: 0 },
+            end: { line: 0, character: texString.length }
+        },
+        envName: '$'
+    }
+}
+
+function createDocument(lines: string[]) {
+    return {
+        lineAt(line: number) {
+            return { text: lines[line] ?? '' }
+        }
+    } as TextDocument
+}

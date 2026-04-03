@@ -6,6 +6,11 @@ const MATH_ENV_NAMES = [
     'align', 'align\\*', 'alignat', 'alignat\\*', 'eqnarray', 'eqnarray\\*', 'equation', 'equation\\*', 'flalign', 'flalign\\*', 'gather', 'gather\\*', 'multline', 'multline\\*', 'subeqnarray', 'subeqnarray\\*'
 ]
 
+/**
+ * Finds the math snippet at the given position and returns its full source
+ * text, including the outer delimiters or matching `\begin{...}` / `\end{...}`
+ * pair, not just the math body.
+ */
 export function findSharedMathSnippet(text: string, position: Point, maxLines: number): MathSnippet | undefined {
     const lines = splitLines(text)
     const inline = findInlineDollarMath(lines, text, position)
