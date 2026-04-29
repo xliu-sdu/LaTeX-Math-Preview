@@ -1,5 +1,7 @@
 # LaTeX Math Preview
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 Math preview panel for LaTeX and Markdown in VS Code.
 
 This extension renders the math expression at the cursor in a side preview panel. It supports both LaTeX documents and Markdown files, uses MathJax for rendering, and can optionally show a cursor marker inside the rendered output.
@@ -93,7 +95,7 @@ Example VS Code `settings.json`:
   "latex-math-preview.mathPreviewPanel.cursor.enabled": true,
   "latex-math-preview.mathPreviewPanel.cursor.symbol": "\\!{|}\\!",
   "latex-math-preview.mathPreviewPanel.selection.startSymbol": "\\!\\{\\!",
-	"latex-math-preview.mathPreviewPanel.selection.endSymbol": "\\!\\}\\!",
+  "latex-math-preview.mathPreviewPanel.selection.endSymbol": "\\!\\}\\!",
   "latex-math-preview.mathPreviewPanel.cursor.color": "magenta",
   "latex-math-preview.mathPreviewPanel.editorGroup": "below",
   "latex-math-preview.mathPreviewPanel.maxLines": 20,
